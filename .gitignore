@@ -1,0 +1,29 @@
+# Flutter
+inspektoor_flutter/.dart_tool/
+inspektoor_flutter/build/
+inspektoor_flutter/.flutter-plugins
+inspektoor_flutter/.flutter-plugins-dependencies
+inspektoor_flutter/.packages
+inspektoor_flutter/pubspec.lock
+
+# iOS
+inspektoor_flutter/ios/Pods/
+inspektoor_flutter/ios/.symlinks/
+inspektoor_flutter/ios/Flutter/Flutter.framework
+inspektoor_flutter/ios/Flutter/App.framework
+
+# Android
+inspektoor_flutter/android/.gradle/
+inspektoor_flutter/android/app/build/
+
+# macOS/Linux/Windows builds
+inspektoor_flutter/linux/build/
+inspektoor_flutter/macos/Build/
+inspektoor_flutter/windows/build/
+
+# Supabase local stuff
+inspektoor_backend/supabase/.temp/
+inspektoor_backend/supabase/.branches/
+
+# OS junk
+.DS_Store

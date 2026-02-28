@@ -1,0 +1,298 @@
+{
+  "c_a_otp_start.dart": {
+    "old_identifier_name": "cAOtpStart",
+    "new_identifier_name": "cAOtpStart",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "179bfadc3d3d051c9aa8682edfe7596f16ce716689ae5f5137901d82bd701437",
+    "original_checksum": "179bfadc3d3d051c9aa8682edfe7596f16ce716689ae5f5137901d82bd701437"
+  },
+  "c_a_otp_verify.dart": {
+    "old_identifier_name": "cAOtpVerify",
+    "new_identifier_name": "cAOtpVerify",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "171f6c1abc75c9abc85f880b8fa2bf6e4c2ed93b3d4aa5bb5f26ade57f7f0ab3",
+    "original_checksum": "171f6c1abc75c9abc85f880b8fa2bf6e4c2ed93b3d4aa5bb5f26ade57f7f0ab3"
+  },
+  "c_a_upsert_onboarding_v3.dart": {
+    "old_identifier_name": "cAUpsertOnboardingV3",
+    "new_identifier_name": "cAUpsertOnboardingV3",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "8a9f830fc6fb40dbacc853a73dc92252645c6b45b01e09c8044b4eb7b826a281",
+    "original_checksum": "8a9f830fc6fb40dbacc853a73dc92252645c6b45b01e09c8044b4eb7b826a281"
+  },
+  "ca_create_account.dart": {
+    "old_identifier_name": "caCreateAccount",
+    "new_identifier_name": "caCreateAccount",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "ea9717df00fe8a61e65d238df7c3dc182c1b3b818b088a972cbe044fe0eecae4",
+    "original_checksum": "ea9717df00fe8a61e65d238df7c3dc182c1b3b818b088a972cbe044fe0eecae4"
+  },
+  "ca_login.dart": {
+    "old_identifier_name": "caLogin",
+    "new_identifier_name": "caLogin",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "8b9c4a66d95de01f3c84ec9fc121e7969597f9859711325cfa270da785a15622",
+    "original_checksum": "8b9c4a66d95de01f3c84ec9fc121e7969597f9859711325cfa270da785a15622"
+  },
+  "ca_payment_details.dart": {
+    "old_identifier_name": "caPaymentDetails",
+    "new_identifier_name": "caPaymentDetails",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "7815cfd96f34f5547a070ada8d31b330c673e27dcc1d419017eaa3d7f102564e",
+    "original_checksum": "7815cfd96f34f5547a070ada8d31b330c673e27dcc1d419017eaa3d7f102564e"
+  },
+  "open_in_external_browser.dart": {
+    "old_identifier_name": "openInExternalBrowser",
+    "new_identifier_name": "openInExternalBrowser",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "8c46f5ecf1c75eb3cdbb0941d852e0f9e37aff9237ca69a7467234fcbea3a88a",
+    "original_checksum": "8c46f5ecf1c75eb3cdbb0941d852e0f9e37aff9237ca69a7467234fcbea3a88a"
+  },
+  "ca_bootstrap.dart": {
+    "old_identifier_name": "caBootstrap",
+    "new_identifier_name": "caBootstrap",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "7019275fa699cea406fa3f5d97aa1167916f00c71d223cecff88fbeec10ef5c2",
+    "original_checksum": "7019275fa699cea406fa3f5d97aa1167916f00c71d223cecff88fbeec10ef5c2"
+  },
+  "init_global_error_logging.dart": {
+    "old_identifier_name": "initGlobalErrorLogging",
+    "new_identifier_name": "initGlobalErrorLogging",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "c9c16e37843f7f550aefb8616be5761e281211c3d4eaf03510f6d6eeda4bed1f",
+    "original_checksum": "c9c16e37843f7f550aefb8616be5761e281211c3d4eaf03510f6d6eeda4bed1f"
+  },
+  "crash_for_test.dart": {
+    "old_identifier_name": "crashForTest",
+    "new_identifier_name": "crashForTest",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "0434abb3e363cb79ae2095b57cfa1fbae85eec72c4e0768b8dbfb789cdc5caf0",
+    "original_checksum": "0434abb3e363cb79ae2095b57cfa1fbae85eec72c4e0768b8dbfb789cdc5caf0"
+  },
+  "build_card.dart": {
+    "old_identifier_name": "buildCard",
+    "new_identifier_name": "buildCard",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "2b663bcc02b512fcfa7180ff422c9478af08a7611cb98277ab34898443c79cb9",
+    "original_checksum": "2b663bcc02b512fcfa7180ff422c9478af08a7611cb98277ab34898443c79cb9"
+  },
+  "generate_uuid_action.dart": {
+    "old_identifier_name": "generateUuidAction",
+    "new_identifier_name": "generateUuidAction",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "c260c8b8893c6b3bd8296682fe3c846ca36f17609c4de3042ef75c86e18f1151",
+    "original_checksum": "c260c8b8893c6b3bd8296682fe3c846ca36f17609c4de3042ef75c86e18f1151"
+  },
+  "add_or_replace_by_key.dart": {
+    "old_identifier_name": "addOrReplaceByKey",
+    "new_identifier_name": "addOrReplaceByKey",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "f6124e082143f78ef8998c9e97fa4edb8a7f002f725d979a75f95921b447431f",
+    "original_checksum": "f6124e082143f78ef8998c9e97fa4edb8a7f002f725d979a75f95921b447431f"
+  },
+  "move_card_item.dart": {
+    "old_identifier_name": "moveCardItem",
+    "new_identifier_name": "moveCardItem",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "dfd78bc5ed5a58289dcba77dbddeb9d0b7f526882ed74b4d570860615ab385fc",
+    "original_checksum": "dfd78bc5ed5a58289dcba77dbddeb9d0b7f526882ed74b4d570860615ab385fc"
+  },
+  "delete_card_item_by_key.dart": {
+    "old_identifier_name": "deleteCardItemByKey",
+    "new_identifier_name": "deleteCardItemByKey",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "70eb056b2cadff1f42867c11cb7effca82afc183facf1ac124e52c5dd33be2cc",
+    "original_checksum": "70eb056b2cadff1f42867c11cb7effca82afc183facf1ac124e52c5dd33be2cc"
+  },
+  "wrap_schema.dart": {
+    "old_identifier_name": "wrapSchema",
+    "new_identifier_name": "wrapSchema",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "2a671d844960889beead8ef984021ab7c80a66faa7c1d7553eb6e541f48f94cd",
+    "original_checksum": "2a671d844960889beead8ef984021ab7c80a66faa7c1d7553eb6e541f48f94cd"
+  },
+  "unwrap_schema.dart": {
+    "old_identifier_name": "unwrapSchema",
+    "new_identifier_name": "unwrapSchema",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "2557ec32442905577d5e045a8f4469c57be742916b5a4b41d12348be660a7b16",
+    "original_checksum": "2557ec32442905577d5e045a8f4469c57be742916b5a4b41d12348be660a7b16"
+  },
+  "rpc_search_form_templates.dart": {
+    "old_identifier_name": "rpcSearchFormTemplates",
+    "new_identifier_name": "rpcSearchFormTemplates",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "3bd37d5f071ec34b7b169972f0d6f7fa17f2f5bfff18be817fd2d8485b6253be",
+    "original_checksum": "3bd37d5f071ec34b7b169972f0d6f7fa17f2f5bfff18be817fd2d8485b6253be"
+  },
+  "init_inspection_draft.dart": {
+    "old_identifier_name": "initInspectionDraft",
+    "new_identifier_name": "initInspectionDraft",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "4fcab728f8b528d9ca04e9ffb91656899ba56703488ac7a72923b72644c3360a",
+    "original_checksum": "4fcab728f8b528d9ca04e9ffb91656899ba56703488ac7a72923b72644c3360a"
+  },
+  "add_or_update_item_value.dart": {
+    "old_identifier_name": "addOrUpdateItemValue",
+    "new_identifier_name": "addOrUpdateItemValue",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "f38210ad104900e4cbb103d00957e5ec3fa655600c216f6c4d5767bc1a9ddc64",
+    "original_checksum": "f38210ad104900e4cbb103d00957e5ec3fa655600c216f6c4d5767bc1a9ddc64"
+  },
+  "undo_last_step.dart": {
+    "old_identifier_name": "undoLastStep",
+    "new_identifier_name": "undoLastStep",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "317fff7030269bd35f6c84cec4e7283326fda6ba0dceecfc4c1ad7f4554494d6",
+    "original_checksum": "317fff7030269bd35f6c84cec4e7283326fda6ba0dceecfc4c1ad7f4554494d6"
+  },
+  "build_values_for_pass_all_sub_checks.dart": {
+    "old_identifier_name": "buildValuesForPassAllSubChecks",
+    "new_identifier_name": "buildValuesForPassAllSubChecks",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "3c413d1945770ab759249949b77602cae539c3d5f1a44a7bf4a072abfb294760",
+    "original_checksum": "3c413d1945770ab759249949b77602cae539c3d5f1a44a7bf4a072abfb294760"
+  },
+  "update_inspection_draft_g_p_s.dart": {
+    "old_identifier_name": "updateInspectionDraftGPS",
+    "new_identifier_name": "updateInspectionDraftGPS",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "c0929e3224f3d781ce7fa87a44714b7659ca92a34d45342cbb282d33d63a84f5",
+    "original_checksum": "c0929e3224f3d781ce7fa87a44714b7659ca92a34d45342cbb282d33d63a84f5"
+  },
+  "upsert_asset.dart": {
+    "old_identifier_name": "upsertAsset",
+    "new_identifier_name": "upsertAsset",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "fc897ad54dad205b5f6182c6f78ca55dc11dd1c7e76aa249e449ddf7fcf9189e",
+    "original_checksum": "fc897ad54dad205b5f6182c6f78ca55dc11dd1c7e76aa249e449ddf7fcf9189e"
+  },
+  "hide_keyboard.dart": {
+    "old_identifier_name": "hideKeyboard",
+    "new_identifier_name": "hideKeyboard",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "a6fd8c6c9745bffdca7469e21dc099fad25025587deecbc17b10e206f5f02619",
+    "original_checksum": "a6fd8c6c9745bffdca7469e21dc099fad25025587deecbc17b10e206f5f02619"
+  },
+  "refresh_supabase_session.dart": {
+    "old_identifier_name": "refreshSupabaseSession",
+    "new_identifier_name": "refreshSupabaseSession",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "7d167fef352c13867cf36693a3aa2fe9e5f7e8ca7bdfa0278c8b104408b1bf0e",
+    "original_checksum": "7d167fef352c13867cf36693a3aa2fe9e5f7e8ca7bdfa0278c8b104408b1bf0e"
+  },
+  "get_asset_forms.dart": {
+    "old_identifier_name": "getAssetForms",
+    "new_identifier_name": "getAssetForms",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "3750f6639dd562c88a014c72ceae29a5ad5000b8bc39cbb7af49d00adc5a82cc",
+    "original_checksum": "3750f6639dd562c88a014c72ceae29a5ad5000b8bc39cbb7af49d00adc5a82cc"
+  },
+  "delete_asset_forms.dart": {
+    "old_identifier_name": "deleteAssetForms",
+    "new_identifier_name": "deleteAssetForms",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "93d12fe701d85291695c85b8cc5c6c7adc18f8999d71b6a9641a7d2acb9bd22c",
+    "original_checksum": "93d12fe701d85291695c85b8cc5c6c7adc18f8999d71b6a9641a7d2acb9bd22c"
+  },
+  "add_forms_to_asset.dart": {
+    "old_identifier_name": "addFormsToAsset",
+    "new_identifier_name": "addFormsToAsset",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "bbae1a84d997e7600b7807d2afcc04aca8bab76de8d7cbc2fe8fa10fd31464a7",
+    "original_checksum": "bbae1a84d997e7600b7807d2afcc04aca8bab76de8d7cbc2fe8fa10fd31464a7"
+  },
+  "trigger_snackbar.dart": {
+    "old_identifier_name": "triggerSnackbar",
+    "new_identifier_name": "triggerSnackbar",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "9a382d71a5b85c7b3b80638384d0bc4a82f81446d570e0147dfa8166d079d3e4",
+    "original_checksum": "9a382d71a5b85c7b3b80638384d0bc4a82f81446d570e0147dfa8166d079d3e4"
+  },
+  "delete_all_forms_from_asset.dart": {
+    "old_identifier_name": "deleteAllFormsFromAsset",
+    "new_identifier_name": "deleteAllFormsFromAsset",
+    "type": "A",
+    "is_deleted": false,
+    "current_checksum": "3911f3de04ebe559b670f6efde3615360da97091b260de4f2d287fc73201b07a",
+    "original_checksum": "3911f3de04ebe559b670f6efde3615360da97091b260de4f2d287fc73201b07a"
+  },
+  "sliding_period_control.dart": {
+    "old_identifier_name": "SlidingPeriodControl",
+    "new_identifier_name": "SlidingPeriodControl",
+    "type": "W",
+    "is_deleted": false,
+    "current_checksum": "e83ce4f3574f869ff154e160ce4a18f4a050a983668ca635b374785b17c77e6e",
+    "original_checksum": "e83ce4f3574f869ff154e160ce4a18f4a050a983668ca635b374785b17c77e6e"
+  },
+  "dynamic_text.dart": {
+    "old_identifier_name": "DynamicText",
+    "new_identifier_name": "DynamicText",
+    "type": "W",
+    "is_deleted": false,
+    "current_checksum": "c1f1ae8fe17f4c63b19c30884b1c48333bd792269f0a0668d4be305ec5721b80",
+    "original_checksum": "c1f1ae8fe17f4c63b19c30884b1c48333bd792269f0a0668d4be305ec5721b80"
+  },
+  "selectable_forms_list.dart": {
+    "old_identifier_name": "SelectableFormsList",
+    "new_identifier_name": "SelectableFormsList",
+    "type": "W",
+    "is_deleted": false,
+    "current_checksum": "8628734dd45e795d29a218f9e06bb16c6325cf0b53d9c4cfd10a16d556d366b0",
+    "original_checksum": "8628734dd45e795d29a218f9e06bb16c6325cf0b53d9c4cfd10a16d556d366b0"
+  },
+  "snackbar.dart": {
+    "old_identifier_name": "Snackbar",
+    "new_identifier_name": "Snackbar",
+    "type": "W",
+    "is_deleted": false,
+    "current_checksum": "1f7781956419e275c36faed38e74875a34acf097ec9c166bdfc04f5b5715f026",
+    "original_checksum": "1f7781956419e275c36faed38e74875a34acf097ec9c166bdfc04f5b5715f026"
+  },
+  "custom_functions.dart": {
+    "old_identifier_name": "CustomFunctions",
+    "new_identifier_name": "CustomFunctions",
+    "type": "F",
+    "is_deleted": false,
+    "current_checksum": "655b77e7789340441f4ee16574b693fa2d3bbf178f4cd656879a06d5a9d2afd4",
+    "original_checksum": "655b77e7789340441f4ee16574b693fa2d3bbf178f4cd656879a06d5a9d2afd4"
+  },
+  "pubspec.yaml": {
+    "old_identifier_name": "pubspec.yaml",
+    "new_identifier_name": "pubspec.yaml",
+    "type": "D",
+    "is_deleted": false,
+    "current_checksum": "5412c71b95b2a6e4a77318903203137fcad797a109ca17e4dc2168d12bc476fc",
+    "original_checksum": "afab8118c2991b73154666e0cab5e7cc376014bcf43eacfb5bf227c28f99f839"
+  }
+}
