@@ -31,6 +31,11 @@ Working end-to-end:
   - Inspection form schema manipulation: wrap/unwrap, card builder,
     add/replace/delete/reorder items — all in custom actions
   - In-memory inspection draft: init, step through items, GPS stamp, undo
+  - Inspection execution UI (INSP-01 in QA): InspectionRunnerView renders
+    all item types (single-check, multi-check, multiple-choice, numeric,
+    comment-box, alphanumeric). Stubs for photo/signature. Summary screen
+    shown on completion with per-item defect detection, pending submission (INSP-02).
+    File: lib/features/inspection/inspection_runner_view.dart
   - Global error logging: crashes sent to Supabase Edge Function → app_errors
   - Theme and UI system: Inter font, brand blue (#27AAE2), light mode only,
     responsive navigation (bottom bar on phone, vertical sidebar on tablet)

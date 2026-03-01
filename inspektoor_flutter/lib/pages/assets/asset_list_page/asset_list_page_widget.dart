@@ -4,8 +4,13 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/pages/components/app_drawer_content/app_drawer_content_widget.dart';
 import '/pages/components/custom_navigation_component/custom_navigation_component_widget.dart';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
+// ignore: unused_import
+import '/backend/supabase/supabase.dart';
+// ignore: unused_import
+import '/custom_code/actions/init_inspection_draft.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -1485,6 +1490,50 @@ class _AssetListPageWidgetState extends State<AssetListPageWidget>
             ],
           ),
         ),
+        // ── DEBUG: remove after INSP-01 testing ─────────────────────────────
+        floatingActionButton: FloatingActionButton.extended(
+          backgroundColor: Colors.deepOrange,
+          icon: const Icon(Icons.bug_report_outlined, size: 18),
+          label: const Text(
+            'Test Inspection',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+          onPressed: () async {
+            const assetId = 'ebe929a7-3982-4e58-95b6-bfd50c31f1e6';
+            final links = await SupaFlow.client
+                .from('asset_inspection_templates')
+                .select('inspection_template_id')
+                .eq('asset_id', assetId)
+                .limit(1);
+            if (links.isEmpty || !context.mounted) return;
+            final templateId =
+                links.first['inspection_template_id'] as String;
+            final assetRows = await SupaFlow.client
+                .from('assets')
+                .select('name')
+                .eq('id', assetId)
+                .limit(1);
+            if (!context.mounted) return;
+            final assetName = assetRows.isNotEmpty
+                ? (assetRows.first['name'] as String? ?? '')
+                : '';
+            final rows = await SupaFlow.client
+                .from('inspection_templates')
+                .select('schema')
+                .eq('id', templateId)
+                .limit(1);
+            if (rows.isEmpty || !context.mounted) return;
+            FFAppState().update(() {
+              FFAppState().templateJson =
+                  jsonEncode(rows.first['schema']);
+            });
+            await initInspectionDraft(assetId, templateId, assetName);
+            if (context.mounted) {
+              context.pushNamed('InspectAsset');
+            }
+          },
+        ),
+        // ── END DEBUG ────────────────────────────────────────────────────────
       ),
     );
   }

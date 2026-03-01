@@ -168,12 +168,18 @@ PLACEHOLDER ONLY
 
 Inspection Execution (Inspect Asset)
   Page:    pages/inspections/inspect_asset/
-  Detail:  The page renders a scaffold with title text "Page Title" (literal
-           string, not a variable) and an empty body Column (no children).
-           No data queries, no form rendering, no submission logic.
-           The in-memory draft infrastructure (actions) is built but cannot
-           be used until this page is implemented.
-           The inspect_asset route exists in the nav but leads to an empty screen.
+  View:    lib/features/inspection/inspection_runner_view.dart  [NEW — INSP-01]
+  Detail:  InspectionRunnerView renders the full step-by-step inspection UI.
+           Reads FFAppState.templateJson (form definition) and derives current
+           step from FFAppState.inspectionDraftJson answered items count.
+           Item types rendered: single-check, multi-check, multiple-choice,
+           numeric, comment-box, alphanumeric.
+           Stubs in place for: photo, signature (marked for future work).
+           Wires existing actions: addOrUpdateItemValue, undoLastStep,
+           buildValuesForPassAllSubChecks.
+           Completion screen shown when all items answered; submission
+           placeholder present pending INSP-02.
+           No FlutterFlow layer imports — clean Dart only.
 
 --------------------------------------------------
 NOT STARTED

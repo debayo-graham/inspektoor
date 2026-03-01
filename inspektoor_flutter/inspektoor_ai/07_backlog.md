@@ -10,17 +10,20 @@ MODULE: INSPECTION EXECUTION
 Priority: Critical. The inspection draft infrastructure exists but the
 execution page is an empty placeholder. Nothing in this module works end-to-end.
 
-INSP-01  Build inspect_asset page UI
+INSP-01  Build inspect_asset page UI  [QA — 2026-02-28]
   File: lib/pages/inspections/inspect_asset/inspect_asset_widget.dart
-  Gap:  Page body is empty (no children in Column). Title is literal "Page Title".
-  Work: Replace the empty body with the step-by-step inspection UI that renders
-        items from FFAppState.templateJson. Wire existing custom actions:
-          - initInspectionDraft (already implemented)
-          - addOrUpdateItemValue (already implemented)
-          - undoLastStep (already implemented)
-          - updateInspectionDraftGPS (already implemented)
-          - buildValuesForPassAllSubChecks (already implemented)
-        The actions are complete — only the page widget is missing.
+  View: lib/features/inspection/inspection_runner_view.dart
+  Work done:
+    - Created InspectionRunnerView (clean Dart, no FlutterFlow imports).
+    - Renders items from FFAppState.templateJson step by step.
+    - Wires: addOrUpdateItemValue, undoLastStep, buildValuesForPassAllSubChecks.
+    - Types handled: single-check, multi-check, multiple-choice,
+      numeric, comment-box, alphanumeric. Stubs for photo and signature.
+    - Back button calls undoLastStep; step derived from draft items length.
+    - Completion screen shown when all items answered; submission
+      placeholder pointing to INSP-02.
+    - inspect_asset_widget.dart updated: title "Inspection", body replaced
+      with InspectionRunnerView. Three lines changed, model untouched.
 
 INSP-02  Implement inspection submission action
   Gap:  No action submits FFAppState.inspectionDraftJson to the database.
