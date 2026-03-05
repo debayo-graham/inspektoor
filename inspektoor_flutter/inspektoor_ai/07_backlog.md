@@ -11,19 +11,76 @@ Priority: Critical. The inspection draft infrastructure exists but the
 execution page is an empty placeholder. Nothing in this module works end-to-end.
 
 INSP-01  Build inspect_asset page UI  [QA — 2026-02-28]
-  File: lib/pages/inspections/inspect_asset/inspect_asset_widget.dart
-  View: lib/features/inspection/inspection_runner_view.dart
+  Files built (all clean Dart, no FlutterFlow imports):
+    lib/features/inspection/inspection_runner_view.dart
+    lib/features/inspection/inspection_session.dart
+    lib/features/inspection/inspection_tokens.dart
+    lib/features/inspection/components/inspection_item_step.dart
+    lib/features/inspection/components/inspection_progress_header.dart
+    lib/features/inspection/components/inspection_summary_view.dart
+    lib/features/inspection/components/pill_button.dart
+    lib/features/inspection/components/item_inputs/option_grid.dart
+    lib/features/inspection/components/item_inputs/multi_check_list.dart
+    lib/features/inspection/components/item_inputs/multi_choice_list.dart
+    lib/features/inspection/components/item_inputs/text_entry.dart
+    lib/features/inspection/components/item_inputs/signature_pad.dart
+    lib/features/inspection/components/item_inputs/stub_notice.dart
+
   Work done:
-    - Created InspectionRunnerView (clean Dart, no FlutterFlow imports).
-    - Renders items from FFAppState.templateJson step by step.
-    - Wires: addOrUpdateItemValue, undoLastStep, buildValuesForPassAllSubChecks.
-    - Types handled: single-check, multi-check, multiple-choice,
-      numeric, comment-box, alphanumeric. Stubs for photo and signature.
-    - Back button calls undoLastStep; step derived from draft items length.
-    - Completion screen shown when all items answered; submission
-      placeholder pointing to INSP-02.
-    - inspect_asset_widget.dart updated: title "Inspection", body replaced
-      with InspectionRunnerView. Three lines changed, model untouched.
+    InspectionRunnerView (orchestrator)
+      - Reads FFAppState.templateJson and inspectionDraftJson.
+      - Derives current step from answered item count.
+      - AnimatedSwitcher with directional slide transitions (forward/back).
+      - Per-item answer cache: selections survive back-navigation.
+      - Wires addOrUpdateItemValue, undoLastStep, buildValuesForPassAllSubChecks.
+      - Routes to InspectionSummaryView when all items answered.
+
+    InspectionSession (pure Dart, no Flutter dependency)
+      - parseTemplate: parses and order-sorts template items from JSON.
+      - answeredCount / answeredItems / defectMap: query the draft JSON.
+      - needsNextButton: type policy (tap-to-submit vs Next button).
+      - buildValues / unsetMultiCheckCount: value assembly and validation.
+
+    InspectionItemStep (per-step StatefulWidget)
+      - Renders correct input widget by item type via switch expression.
+      - Types fully implemented:
+          single-check       → InspectionOptionGrid (tap-to-submit)
+          multiple-choice    → InspectionOptionGrid (single) or
+                               InspectionMultiChoiceList (allowMultiple=true)
+          multi-check        → InspectionMultiCheckList with Pass All shortcut;
+                               validates all sub-checks answered before submit
+          numeric            → InspectionTextEntry (decimal keyboard, unit suffix)
+          comment-box        → InspectionTextEntry (multiline, maxLength)
+          alphanumeric       → InspectionTextEntry
+          signature          → InspectionSignaturePad (fully implemented — see below)
+          photo              → InspectionStubNotice (stub only)
+          unknown            → InspectionStubNotice
+      - Footer: Previous / Next pill buttons; layout adapts to which are needed.
+      - Signature: Next enabled only after a stroke is captured.
+      - Multi-check: snackbar shown if any sub-checks unset on Next.
+
+    InspectionSignaturePad (fully implemented — not a stub)
+      - Drawing canvas via `signature` package (SignatureController).
+      - Clear and Done buttons; Done disabled until at least one stroke drawn.
+      - Exports PNG as Uint8List via onCapture callback.
+      - Value stored as base64 string in answer cache; survives back-navigation.
+
+    InspectionProgressHeader + InspectionSegmentBar
+      - Segmented progress bar: each segment coloured pass/fail/current/pending.
+      - Step label and item label displayed below the bar.
+
+    InspectionSummaryView
+      - Shown when step == total (all items answered).
+      - Stat chips: Passed / Defects / Total counts.
+      - Per-item list: dot (green=pass, red=defect, grey=unanswered),
+        label, recorded value(s), "Defect" badge if applicable.
+      - Submit Inspection button present but disabled with INSP-02 placeholder notice.
+      - "Review previous item" back button active.
+
+    inspect_asset_widget.dart
+      - Title set to "Inspection".
+      - Body replaced with InspectionRunnerView.
+      - Model file untouched.
 
 INSP-02  Implement inspection submission action
   Gap:  No action submits FFAppState.inspectionDraftJson to the database.

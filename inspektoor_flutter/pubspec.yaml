@@ -113,6 +113,7 @@ dependencies:
   sign_in_with_apple: 7.0.1
   sign_in_with_apple_platform_interface: 2.0.0
   sign_in_with_apple_web: 3.0.0
+  signature: ^5.4.0
   sqflite: 2.3.3+1
   sqflite_common: 2.5.4+3
   storage_client: 2.4.0

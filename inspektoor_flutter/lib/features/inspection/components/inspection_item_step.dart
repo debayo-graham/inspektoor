@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,6 +13,7 @@ import 'item_inputs/multi_check_list.dart';
 import 'item_inputs/multi_choice_list.dart';
 import 'item_inputs/text_entry.dart';
 import 'item_inputs/stub_notice.dart';
+import 'item_inputs/signature_pad.dart';
 
 // ─── InspectionInputCard ──────────────────────────────────────────────────────
 
@@ -84,6 +87,9 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
   // single-check / single multiple-choice: last selected label
   String _singleChoice = '';
 
+  // signature: raw PNG bytes captured by InspectionSignaturePad
+  Uint8List? _signatureBytes;
+
   @override
   void initState() {
     super.initState();
@@ -110,6 +116,11 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
     _textCtrl.addListener(_onTextChanged);
 
     _singleChoice = (cache['singleChoice'] as String?) ?? '';
+
+    final savedSig = cache['signatureBase64'] as String?;
+    if (savedSig != null && savedSig.isNotEmpty) {
+      _signatureBytes = base64Decode(savedSig);
+    }
   }
 
   @override
@@ -127,6 +138,9 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
       'multiSelected': _multiSelected.toList(),
       'text': _textCtrl.text,
       'singleChoice': _singleChoice,
+      'signatureBase64': _signatureBytes != null
+          ? base64Encode(_signatureBytes!)
+          : null,
     });
   }
 
@@ -156,6 +170,18 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
 
   void _handleNext() {
     final t = widget.item['type'] as String? ?? '';
+
+    if (t == 'signature') {
+      if (_signatureBytes == null) return;
+      _submit([
+        {
+          'key': 'signature_data',
+          'label': 'Signature',
+          'value': base64Encode(_signatureBytes!),
+        }
+      ]);
+      return;
+    }
 
     if (t == 'multi-check') {
       final unset = InspectionSession.unsetMultiCheckCount(_checkValues);
@@ -300,15 +326,24 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
           icon: Icons.photo_camera_outlined,
           message: 'Photo capture is not yet available.',
         ),
-      'signature' => const InspectionStubNotice(
-          icon: Icons.draw_outlined,
-          message: 'Signature capture is not yet available.',
+      'signature' => InspectionSignaturePad(
+          submitting: _submitting,
+          onCapture: (bytes) {
+            setState(() => _signatureBytes = bytes);
+            _updateCache();
+          },
         ),
       _ => InspectionStubNotice(
           icon: Icons.help_outline,
           message: 'Unsupported item type: $t',
         ),
     };
+  }
+
+  bool get _canNext {
+    final t = widget.item['type'] as String? ?? '';
+    if (t == 'signature') return _signatureBytes != null;
+    return true;
   }
 
   Widget _buildFooter() {
@@ -336,7 +371,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
                   child: InspectionPillButton(
                     label: _submitting ? 'Saving…' : 'Next',
                     trailingIcon: Icons.arrow_forward_rounded,
-                    onTap: _submitting ? null : _handleNext,
+                    onTap: (_submitting || !_canNext) ? null : _handleNext,
                     outlined: false,
                   ),
                 ),
@@ -349,7 +384,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
                     child: InspectionPillButton(
                       label: _submitting ? 'Saving…' : 'Next',
                       trailingIcon: Icons.arrow_forward_rounded,
-                      onTap: _submitting ? null : _handleNext,
+                      onTap: (_submitting || !_canNext) ? null : _handleNext,
                       outlined: false,
                     ),
                   ),

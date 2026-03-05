@@ -6,6 +6,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/form_field_controller.dart';
 import '/pages/components/card_editor_sheet/card_editor_sheet_widget.dart';
+import '/features/inspection_form/inspection_item_types.dart';
 import '/pages/components/custom_confirm_dialog/custom_confirm_dialog_widget.dart';
 import '/pages/components/snackbar/snackbar_widget.dart';
 import 'dart:async';
@@ -772,11 +773,7 @@ class _CreateInspectionFormPageWidgetState
                                         controller: _model
                                                 .cardTypeValueController ??=
                                             FormFieldController<String>(null),
-                                        options: [
-                                          'Multi Check',
-                                          'Option 2',
-                                          'Option 3'
-                                        ],
+                                        options: kItemTypeLabels,
                                         onChanged: (val) async {
                                           safeSetState(
                                               () => _model.cardTypeValue = val);
@@ -999,7 +996,7 @@ class _CreateInspectionFormPageWidgetState
                                                               CardEditorSheetWidget(
                                                             mode: FFAppConstants
                                                                 .CREATEMODE,
-                                                            type: 'multi-check',
+                                                            type: typeFromLabel(_model.cardTypeValue),
                                                             index: _model
                                                                 .inspectionFormItems
                                                                 .length,
@@ -1685,10 +1682,10 @@ class _CreateInspectionFormPageWidgetState
                                                     Builder(
                                                       builder: (context) {
                                                         final optionItems =
-                                                            getJsonField(
+                                                            (getJsonField(
                                                           listViewInspectionFormItemsItem,
                                                           r'''$.config.checks''',
-                                                        ).toList();
+                                                        ) as List? ?? []).toList();
 
                                                         return ListView.builder(
                                                           padding:
