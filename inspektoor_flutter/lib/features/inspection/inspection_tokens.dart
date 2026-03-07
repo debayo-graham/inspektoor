@@ -12,6 +12,22 @@ const Color kInspSuccess     = Color(0xFF00AD07);
 const Color kInspError       = Color(0xFFFF3333);
 const Color kInspFormField   = Color(0xFFEFF3FA);
 
+// Multi-check card state backgrounds
+const Color kInspPassBg     = Color(0xFFF0FDF4); // green-50
+const Color kInspPassBorder = Color(0xFFBBF7D0); // green-200
+const Color kInspFailBg     = Color(0xFFFEF2F2); // red-50
+const Color kInspFailBorder = Color(0xFFFECACA); // red-200
+const Color kInspSlate      = Color(0xFFF8FAFC); // slate-50
+
+// Filled segmented-control active colours
+const Color kInspPassFill   = Color(0xFF10B981); // emerald-500
+const Color kInspFailFill   = Color(0xFFEF4444); // red-500
+
+// Amber / warning
+const Color kInspWarning       = Color(0xFFF59E0B);
+const Color kInspWarningBg     = Color(0xFFFEF3C7);
+const Color kInspWarningBorder = Color(0xFFFCD34D);
+
 TextStyle inspInterStyle(double size, FontWeight weight, Color color) =>
     GoogleFonts.inter(
       fontSize: size,

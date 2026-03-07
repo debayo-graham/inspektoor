@@ -65,11 +65,6 @@ class InspectionProgressHeader extends StatelessWidget {
             templateItems: templateItems,
             defectMap: defectMap,
           ),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: inspInterStyle(17, FontWeight.w600, kInspPrimaryText),
-          ),
         ],
       ),
     );

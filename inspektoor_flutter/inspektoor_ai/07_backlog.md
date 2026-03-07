@@ -10,7 +10,7 @@ MODULE: INSPECTION EXECUTION
 Priority: Critical. The inspection draft infrastructure exists but the
 execution page is an empty placeholder. Nothing in this module works end-to-end.
 
-INSP-01  Build inspect_asset page UI  [QA — 2026-02-28]
+INSP-01  Build inspect_asset page UI  [QA — 2026-03-07]
   Files built (all clean Dart, no FlutterFlow imports):
     lib/features/inspection/inspection_runner_view.dart
     lib/features/inspection/inspection_session.dart
@@ -68,6 +68,7 @@ INSP-01  Build inspect_asset page UI  [QA — 2026-02-28]
     InspectionProgressHeader + InspectionSegmentBar
       - Segmented progress bar: each segment coloured pass/fail/current/pending.
       - Step label and item label displayed below the bar.
+      - Item label removed from header (now rendered as "SECTION QUESTION" in body).
 
     InspectionSummaryView
       - Shown when step == total (all items answered).
@@ -81,6 +82,37 @@ INSP-01  Build inspect_asset page UI  [QA — 2026-02-28]
       - Title set to "Inspection".
       - Body replaced with InspectionRunnerView.
       - Model file untouched.
+
+  UI Modernisation (added 2026-03-05 → 2026-03-07):
+    inspection_tokens.dart
+      - New colour tokens: kInspPassBg/Border/Fill, kInspFailBg/Border/Fill,
+        kInspWarningBg/Border/Warning, kInspSlate, kInspBorder, kInspCard,
+        kInspPrimary, kInspPrimaryText, kInspSecText.
+      - inspInterStyle(size, weight, color) helper — all new text uses this.
+
+    inspection_item_step.dart
+      - _failureNotes (Map<String, String>) + _failurePhotos (Map<String, Uint8List?>)
+        state with base64 cache restore/persist.
+      - _buildScrollableContent(): multi-check gets "SECTION QUESTION" label,
+        no InspectionInputCard wrapper; all other types wrapped in InspectionInputCard.
+      - _canNext: requires all sub-checks answered for multi-check.
+      - _buildMultiCheckFooter(): square grey back button (56×56) + animated
+        Continue button (grey disabled / blue gradient all-passed / amber any-failed).
+      - All props wired into InspectionMultiCheckList (failurePhotos, onPhotoChanged).
+
+    multi_check_list.dart
+      - Coloured cards (green/red/slate) with animated border.
+      - Status sub-labels ("✓ Passed" / "✗ Failed — note required").
+      - _FilledSegmentedControl (Pass/Fail chips).
+      - _AllPassedBanner / _IssuesBanner / _PassAllButton.
+      - _FailureNotePanel: textarea + photo evidence box.
+      - Photo box empty state: dashed border (_DashedBorderPainter), kInspSlate bg,
+        sky-100 circle with sky-600 camera icon, "Tap to add photo",
+        "Evidence of the issue" subtitle.
+      - Photo box captured state: 4:3 AspectRatio, black bg, BoxFit.contain
+        (full image visible, consistent height, no cropping). ✕ remove (top-right),
+        "Retake" pill (bottom-right).
+      - Camera-only capture via selectMedia(mediaSource: MediaSource.camera).
 
 INSP-02  Implement inspection submission action
   Gap:  No action submits FFAppState.inspectionDraftJson to the database.

@@ -15,7 +15,12 @@ import 'components/inspection_summary_view.dart';
 // Reads template + draft from FFAppState; delegates rendering to components.
 
 class InspectionRunnerView extends StatefulWidget {
-  const InspectionRunnerView({super.key});
+  /// Called once the first time the user makes any change (cache update or
+  /// item submission). Used by the parent page to know the inspection is dirty
+  /// even before the first item is fully submitted.
+  final VoidCallback? onInteracted;
+
+  const InspectionRunnerView({super.key, this.onInteracted});
 
   @override
   State<InspectionRunnerView> createState() => _InspectionRunnerViewState();
@@ -31,6 +36,15 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
 
   // Per-item answer cache so selections survive back-navigation.
   final Map<String, Map<String, dynamic>> _answerCache = {};
+
+  // Fired once to tell the parent page the user has started interacting.
+  bool _interactionReported = false;
+
+  void _reportInteraction() {
+    if (_interactionReported) return;
+    _interactionReported = true;
+    widget.onInteracted?.call();
+  }
 
   @override
   void initState() {
@@ -65,6 +79,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
     Map<String, dynamic> item,
     List<dynamic> values,
   ) async {
+    _reportInteraction();
     _goingForward = true;
     await addOrUpdateItemValue(
       item['key'] as String,
@@ -128,7 +143,10 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
         onSubmit: (values) => _onSubmit(item, values),
         onBack: step > 0 ? _onBack : null,
         initialCache: _answerCache[itemKey] ?? const {},
-        onCacheChanged: (cache) => _answerCache[itemKey] = cache,
+        onCacheChanged: (cache) {
+          _answerCache[itemKey] = cache;
+          _reportInteraction();
+        },
       );
     }
 

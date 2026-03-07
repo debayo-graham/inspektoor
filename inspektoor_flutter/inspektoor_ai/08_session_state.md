@@ -1,5 +1,5 @@
 Session State
-Last updated: 2026-02-28
+Last updated: 2026-03-07
 
 --------------------------------------------------
 What the system currently is
@@ -33,8 +33,14 @@ Working end-to-end:
   - In-memory inspection draft: init, step through items, GPS stamp, undo
   - Inspection execution UI (INSP-01 in QA): InspectionRunnerView renders
     all item types (single-check, multi-check, multiple-choice, numeric,
-    comment-box, alphanumeric). Stubs for photo/signature. Summary screen
-    shown on completion with per-item defect detection, pending submission (INSP-02).
+    comment-box, alphanumeric, signature). Photo type still stubbed.
+    UI modernisation complete: custom colour tokens (inspection_tokens.dart),
+    inspInterStyle() text helper, coloured multi-check cards with pass/fail
+    chips, failure note panel with camera-only photo evidence (4:3 aspect
+    ratio, dashed border empty state, full image display), context-aware
+    multi-check footer (grey/blue/amber), "SECTION QUESTION" body label.
+    Summary screen shown on completion with per-item defect detection,
+    pending submission (INSP-02).
     File: lib/features/inspection/inspection_runner_view.dart
   - Global error logging: crashes sent to Supabase Edge Function → app_errors
   - Theme and UI system: Inter font, brand blue (#27AAE2), light mode only,
@@ -53,12 +59,12 @@ What should be worked on next
 --------------------------------------------------
 
 1. Inspection execution  [highest priority]
-   The inspect_asset page is an empty placeholder ("Page Title", no body).
-   All supporting custom actions are already built. The next step is:
-     a. Build the page UI to render items from the template schema
-     b. Write caSubmitInspection to persist the draft to inspections,
+   INSP-01 (page UI) is built and in QA as of 2026-03-07. Next steps:
+     a. Complete QA on INSP-01 and resolve any issues found
+     b. INSP-02: Write caSubmitInspection to persist the draft to inspections,
         inspection_items, and inspection_item_values
-     c. Update asset.last_inspected_at on submit
+     c. INSP-03: Wire submission action into the summary view
+     d. INSP-04: Update asset.last_inspected_at on submit
 
 2. Verify and close partially-built flows
    Before building new modules, confirm:

@@ -24,6 +24,8 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  bool _hasInteracted = false;
+
   @override
   void initState() {
     super.initState();
@@ -44,7 +46,7 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
   /// If the user has answered at least one item, shows a confirmation dialog
   /// that requires typing "confirm" before allowing navigation away.
   Future<void> _handleBackTap() async {
-    final hasStarted =
+    final hasStarted = _hasInteracted ||
         InspectionSession.answeredCount(FFAppState().inspectionDraftJson) > 0;
 
     if (!hasStarted) {
@@ -131,9 +133,13 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
             elevation: 0.0,
             scrolledUnderElevation: 0.0,
           ),
-          body: const SafeArea(
+          body: SafeArea(
             top: true,
-            child: InspectionRunnerView(),
+            child: InspectionRunnerView(
+              onInteracted: () {
+                if (!_hasInteracted) setState(() => _hasInteracted = true);
+              },
+            ),
           ),
         ),
       ),

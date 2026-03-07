@@ -49,6 +49,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
   late final TextEditingController _minPhotosCtrl;
   late final TextEditingController _maxPhotosCtrl;
   bool _allowMultiple = false;
+  bool _photoRequired = true;
 
   @override
   void setState(VoidCallback callback) {
@@ -127,6 +128,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
       _minPhotosCtrl.text   = cfg['minPhotos']?.toString() ?? '';
       _maxPhotosCtrl.text   = cfg['maxPhotos']?.toString() ?? '';
       _allowMultiple        = cfg['allowMultiple'] == true;
+      _photoRequired        = cfg['photoRequired'] == true;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
@@ -568,7 +570,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                                                     checks,
                                                     opts,
                                                     _allowMultiple,
-                                                    false,
+                                                    _photoRequired,
                                                     args[0],
                                                     args[1],
                                                     args[2],
@@ -595,7 +597,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                                                     checks,
                                                     opts,
                                                     _allowMultiple,
-                                                    false,
+                                                    _photoRequired,
                                                     args[0],
                                                     args[1],
                                                     args[2],
@@ -881,6 +883,74 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                 ),
               ),
             ),
+            // ── Photo required toggle ─────────────────────────────────────
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(4, 0, 4, 0),
+              child: SwitchListTile.adaptive(
+                title: Text(
+                  'Require photo on failure',
+                  style: FlutterFlowTheme.of(context).labelMedium.override(
+                        font: GoogleFonts.inter(
+                          fontWeight: FlutterFlowTheme.of(context)
+                              .labelMedium
+                              .fontWeight,
+                        ),
+                        letterSpacing: 0.0,
+                      ),
+                ),
+                value: _photoRequired,
+                activeTrackColor: FlutterFlowTheme.of(context).primary,
+                onChanged: (val) => safeSetState(() => _photoRequired = val),
+                dense: true,
+                contentPadding:
+                    const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 0),
+              ),
+            ),
+            // ── Max photos selector ──────────────────────────────────────
+            Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),
+                child: Row(
+                  children: [
+                    Text(
+                      'Max photos per failure',
+                      style: FlutterFlowTheme.of(context).labelMedium.override(
+                            font: GoogleFonts.inter(
+                              fontWeight: FlutterFlowTheme.of(context)
+                                  .labelMedium
+                                  .fontWeight,
+                            ),
+                            letterSpacing: 0.0,
+                          ),
+                    ),
+                    const SizedBox(width: 12),
+                    DropdownButton<int>(
+                      value: int.tryParse(_maxPhotosCtrl.text) ?? 5,
+                      underline: const SizedBox.shrink(),
+                      items: List.generate(5, (i) {
+                        final v = i + 1;
+                        return DropdownMenuItem(
+                          value: v,
+                          child: Text(
+                            '$v',
+                            style: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .override(
+                                  font: GoogleFonts.inter(
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .fontWeight,
+                                  ),
+                                  letterSpacing: 0.0,
+                                ),
+                          ),
+                        );
+                      }),
+                      onChanged: (v) => safeSetState(
+                          () => _maxPhotosCtrl.text = (v ?? 5).toString()),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

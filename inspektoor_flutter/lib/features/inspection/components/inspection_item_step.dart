@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '/custom_code/actions/build_values_for_pass_all_sub_checks.dart';
+
 import '../inspection_session.dart';
 import '../inspection_tokens.dart';
 import 'inspection_progress_header.dart';
@@ -78,6 +78,12 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
   // multi-check: sub-check id → 'pass' | 'fail' | '' (unset)
   late final Map<String, String> _checkValues;
 
+  // multi-check: sub-check id → failure note text
+  late final Map<String, String> _failureNotes;
+
+  // multi-check: sub-check id → failure photo bytes (up to 5 per check)
+  final Map<String, List<Uint8List>> _failurePhotos = {};
+
   // multiple-choice (allowMultiple): selected option labels
   final Set<String> _multiSelected = {};
 
@@ -109,6 +115,10 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
       _checkValues = {};
     }
 
+    _failureNotes = Map<String, String>.from(
+      (cache['failureNotes'] as Map?)?.cast<String, String>() ?? {},
+    );
+
     final savedMulti = (cache['multiSelected'] as List?)?.cast<String>() ?? [];
     _multiSelected.addAll(savedMulti);
 
@@ -120,6 +130,22 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
     final savedSig = cache['signatureBase64'] as String?;
     if (savedSig != null && savedSig.isNotEmpty) {
       _signatureBytes = base64Decode(savedSig);
+    }
+
+    // Restore failure photos — backward-compatible with old single-photo format
+    final savedPhotos =
+        (cache['failurePhotos'] as Map?)?.cast<String, dynamic>() ?? {};
+    for (final entry in savedPhotos.entries) {
+      if (entry.value is String && (entry.value as String).isNotEmpty) {
+        // Legacy single-photo format → migrate to single-item list
+        _failurePhotos[entry.key] = [base64Decode(entry.value as String)];
+      } else if (entry.value is List) {
+        _failurePhotos[entry.key] = (entry.value as List)
+            .whereType<String>()
+            .where((s) => s.isNotEmpty)
+            .map((s) => base64Decode(s))
+            .toList();
+      }
     }
   }
 
@@ -135,12 +161,18 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
   void _updateCache() {
     widget.onCacheChanged({
       'checkValues': Map<String, String>.from(_checkValues),
+      'failureNotes': Map<String, String>.from(_failureNotes),
       'multiSelected': _multiSelected.toList(),
       'text': _textCtrl.text,
       'singleChoice': _singleChoice,
       'signatureBase64': _signatureBytes != null
           ? base64Encode(_signatureBytes!)
           : null,
+      'failurePhotos': {
+        for (final e in _failurePhotos.entries)
+          if (e.value.isNotEmpty)
+            e.key: e.value.map((b) => base64Encode(b)).toList(),
+      },
     });
   }
 
@@ -196,6 +228,38 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
         ));
         return;
       }
+
+      // Validate failure evidence
+      final reqPhoto = _cfg['photoRequired'] as bool? ?? false;
+      final failedIds = _checkValues.entries
+          .where((e) => e.value == 'fail')
+          .map((e) => e.key);
+      for (final id in failedIds) {
+        final hasNote = (_failureNotes[id] ?? '').trim().isNotEmpty;
+        final hasPhotos = (_failurePhotos[id] ?? []).isNotEmpty;
+        if (reqPhoto && !hasPhotos) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+              'Photo evidence is required for failed items.',
+              style: inspInterStyle(13, FontWeight.w500, Colors.white),
+            ),
+            backgroundColor: kInspPrimaryText,
+            behavior: SnackBarBehavior.floating,
+          ));
+          return;
+        }
+        if (!hasNote && !hasPhotos) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+              'Failed items need a note or photo before continuing.',
+              style: inspInterStyle(13, FontWeight.w500, Colors.white),
+            ),
+            backgroundColor: kInspPrimaryText,
+            behavior: SnackBarBehavior.floating,
+          ));
+          return;
+        }
+      }
     }
 
     _submit(InspectionSession.buildValues(
@@ -227,13 +291,45 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: InspectionInputCard(child: _buildInputArea()),
+              child: _buildScrollableContent(),
             ),
           ),
           _buildFooter(),
         ],
       ),
     );
+  }
+
+  Widget _buildScrollableContent() {
+    final t = widget.item['type'] as String? ?? '';
+    if (t == 'multi-check') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // "SECTION QUESTION" label
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SECTION QUESTION',
+                  style: inspInterStyle(10, FontWeight.w600, kInspPrimary)
+                      .copyWith(letterSpacing: 1.2),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.item['label'] as String? ?? '',
+                  style: inspInterStyle(20, FontWeight.w700, kInspPrimaryText),
+                ),
+              ],
+            ),
+          ),
+          _buildInputArea(),
+        ],
+      );
+    }
+    return InspectionInputCard(child: _buildInputArea());
   }
 
   Widget _buildInputArea() {
@@ -283,22 +379,32 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
               .map((e) => Map<String, dynamic>.from(e))
               .toList(),
           values: _checkValues,
+          failureNotes: _failureNotes,
+          failurePhotos: _failurePhotos,
           onToggle: (id, val) {
             setState(() => _checkValues[id] = val);
             _updateCache();
           },
+          onNoteChanged: (id, note) {
+            setState(() => _failureNotes[id] = note);
+            _updateCache();
+          },
+          onPhotosChanged: (id, photoList) {
+            setState(() => _failurePhotos[id] = photoList);
+            _updateCache();
+          },
           onPassAll: () async {
-            final checks = (_cfg['checks'] as List? ?? []).toList();
-            final vals = await buildValuesForPassAllSubChecks(checks);
             setState(() {
               for (final key in _checkValues.keys.toList()) {
                 _checkValues[key] = 'pass';
               }
             });
             _updateCache();
-            await _submit(vals);
+            _handleNext();
           },
           submitting: _submitting,
+          photoRequired: _cfg['photoRequired'] as bool? ?? false,
+          maxPhotos: (_cfg['maxPhotos'] as num?)?.toInt().clamp(1, 5) ?? 5,
         ),
       'numeric' => InspectionTextEntry(
           controller: _textCtrl,
@@ -343,10 +449,26 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
   bool get _canNext {
     final t = widget.item['type'] as String? ?? '';
     if (t == 'signature') return _signatureBytes != null;
+    if (t == 'multi-check') {
+      if (_checkValues.isEmpty ||
+          InspectionSession.unsetMultiCheckCount(_checkValues) != 0) {
+        return false;
+      }
+      final reqPhoto = _cfg['photoRequired'] as bool? ?? false;
+      return _checkValues.entries.where((e) => e.value == 'fail').every((e) {
+        final hasNote = (_failureNotes[e.key] ?? '').trim().isNotEmpty;
+        final hasPhotos = (_failurePhotos[e.key] ?? []).isNotEmpty;
+        if (reqPhoto) return hasPhotos;
+        return hasNote || hasPhotos;
+      });
+    }
     return true;
   }
 
   Widget _buildFooter() {
+    final t = widget.item['type'] as String? ?? '';
+    if (t == 'multi-check') return _buildMultiCheckFooter();
+
     final hasBack = widget.onBack != null;
     final hasNext = _needsNextButton;
 
@@ -395,6 +517,112 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
                   onTap: _submitting ? null : () => widget.onBack!(),
                   outlined: true,
                 ),
+    );
+  }
+
+  Widget _buildMultiCheckFooter() {
+    final allAnswered = _canNext;
+    final allPassed = allAnswered &&
+        _checkValues.values.every((v) => v == 'pass');
+    final anyFailed = _checkValues.values.any((v) => v == 'fail');
+
+    // Derive continue button appearance
+    final Gradient? gradient;
+    final Color bgColor;
+    final Color? glowColor;
+    final String label;
+    final VoidCallback? onTap;
+
+    if (!allAnswered) {
+      gradient = null;
+      bgColor = kInspBorder;
+      glowColor = null;
+      label = 'Answer all items to continue';
+      onTap = null;
+    } else if (allPassed) {
+      gradient = const LinearGradient(
+        colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+      bgColor = const Color(0xFF0EA5E9);
+      glowColor = const Color(0xFF0EA5E9);
+      label = 'Continue →';
+      onTap = _submitting ? null : _handleNext;
+    } else if (anyFailed) {
+      gradient = null;
+      bgColor = kInspWarning;
+      glowColor = kInspWarning;
+      label = 'Continue with Issues →';
+      onTap = _submitting ? null : _handleNext;
+    } else {
+      gradient = null;
+      bgColor = kInspBorder;
+      glowColor = null;
+      label = 'Answer all items to continue';
+      onTap = null;
+    }
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+      child: Row(
+        children: [
+          // Square back button
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: kInspSlate,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: kInspBorder, width: 1.5),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.arrow_back_rounded,
+                color: widget.onBack != null ? kInspPrimaryText : kInspBorder,
+              ),
+              onPressed: _submitting || widget.onBack == null
+                  ? null
+                  : () => widget.onBack!(),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Context-aware continue button
+          Expanded(
+            child: GestureDetector(
+              onTap: onTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                height: 56,
+                decoration: BoxDecoration(
+                  color: gradient == null ? bgColor : null,
+                  gradient: gradient,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: glowColor != null
+                      ? [
+                          BoxShadow(
+                            color: glowColor.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  label,
+                  style: inspInterStyle(
+                    15,
+                    FontWeight.w700,
+                    onTap != null ? Colors.white : const Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -173,8 +173,15 @@ Inspection Execution (Inspect Asset)
            Reads FFAppState.templateJson (form definition) and derives current
            step from FFAppState.inspectionDraftJson answered items count.
            Item types rendered: single-check, multi-check, multiple-choice,
-           numeric, comment-box, alphanumeric.
-           Stubs in place for: photo, signature (marked for future work).
+           numeric, comment-box, alphanumeric, signature.
+           Stub in place for: photo (marked for future work).
+           Signature: fully implemented via InspectionSignaturePad (drawing
+           canvas, clear/done, PNG export as Uint8List, base64 cache).
+           UI modernised: custom colour tokens (inspection_tokens.dart),
+           inspInterStyle() text helper, coloured multi-check cards with
+           pass/fail chips, failure note panel with camera-only photo
+           evidence (4:3 aspect ratio display), context-aware multi-check
+           footer (grey/blue/amber), "SECTION QUESTION" body label.
            Wires existing actions: addOrUpdateItemValue, undoLastStep,
            buildValuesForPassAllSubChecks.
            Completion screen shown when all items answered; submission

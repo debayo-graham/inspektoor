@@ -94,10 +94,12 @@ Future<dynamic> buildCard(
       break;
 
     case "multi-check":
+      final mp = _parseIntOrZero(maxPhotos);
       config = {
         "checks": checksList ?? [],
         "options": opts,
         "photoRequired": photoRequired ?? false,
+        "maxPhotos": mp < 1 || mp > 5 ? 5 : mp,
       };
       break;
 
