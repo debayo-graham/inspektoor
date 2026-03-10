@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '/features/inspection_form/inspection_item_types.dart';
 import 'card_editor_sheet_model.dart';
 export 'card_editor_sheet_model.dart';
 
@@ -49,7 +50,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
   late final TextEditingController _minPhotosCtrl;
   late final TextEditingController _maxPhotosCtrl;
   bool _allowMultiple = false;
-  bool _photoRequired = true;
+  bool _photoRequired = false;
 
   @override
   void setState(VoidCallback callback) {
@@ -85,6 +86,8 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
             'id': m['id'] ?? e.key.toString(),
             'label': m['label'] ?? '',
             'type': 'checkbox',
+            'photoRequired': m['photoRequired'] == true,
+            'maxPhotos': (m['maxPhotos'] as num?)?.toInt().clamp(1, 5) ?? 5,
           };
         }).toList().cast<dynamic>();
         safeSetState(() {});
@@ -124,11 +127,16 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
       _unitCtrl.text        = cfg['unit']                  ?? '';
       _noteCtrl.text        = cfg['note']                  ?? '';
       _maxLengthCtrl.text   = cfg['maxLength']?.toString() ?? '';
-      _regexCtrl.text       = cfg['regex']                 ?? '';
+      _regexCtrl.text       = cfg['formatPattern'] ?? cfg['regex'] ?? '';
       _minPhotosCtrl.text   = cfg['minPhotos']?.toString() ?? '';
       _maxPhotosCtrl.text   = cfg['maxPhotos']?.toString() ?? '';
       _allowMultiple        = cfg['allowMultiple'] == true;
       _photoRequired        = cfg['photoRequired'] == true;
+      // For numeric and alphanumeric types, ocrEnabled is stored separately in config.
+      final incomingType = (widget.incomingItem as Map)['type'] as String? ?? '';
+      if (incomingType == 'numeric' || incomingType == 'alphanumeric' || incomingType == 'comment-box') {
+        _photoRequired = cfg['ocrEnabled'] == true;
+      }
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
@@ -225,31 +233,53 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                                             child: Column(
                                               mainAxisSize: MainAxisSize.max,
                                               children: [
-                                                Text(
-                                                  'Card Title',
-                                                  style: FlutterFlowTheme.of(
-                                                          context)
-                                                      .bodyMedium
-                                                      .override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontStyle,
-                                                        ),
-                                                        fontSize: 20.0,
-                                                        letterSpacing: 0.0,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontStyle:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontStyle,
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      'Card Title',
+                                                      style: FlutterFlowTheme.of(
+                                                              context)
+                                                          .bodyMedium
+                                                          .override(
+                                                            font: GoogleFonts.inter(
+                                                              fontWeight:
+                                                                  FontWeight.w600,
+                                                              fontStyle:
+                                                                  FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .bodyMedium
+                                                                      .fontStyle,
+                                                            ),
+                                                            fontSize: 20.0,
+                                                            letterSpacing: 0.0,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontStyle:
+                                                                FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .bodyMedium
+                                                                    .fontStyle,
+                                                          ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                          horizontal: 8, vertical: 3),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFF1F5F9),
+                                                        borderRadius:
+                                                            BorderRadius.circular(6),
                                                       ),
+                                                      child: Text(
+                                                        labelFromType(widget.type),
+                                                        style: GoogleFonts.inter(
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w500,
+                                                          color: const Color(0xFF64748B),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                                 Padding(
                                                   padding: EdgeInsetsDirectional
@@ -541,6 +571,15 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                                                 final checks = t == 'multi-check'
                                                     ? _model.checksList.toList()
                                                     : null;
+                                                // Derive item-level values from per-check config (backward compat)
+                                                if (t == 'multi-check' && checks != null) {
+                                                  _photoRequired = checks.any(
+                                                      (c) => c['photoRequired'] == true);
+                                                  final maxP = checks
+                                                      .map((c) => (c['maxPhotos'] as num?)?.toInt() ?? 5)
+                                                      .fold<int>(5, (a, b) => a > b ? a : b);
+                                                  _maxPhotosCtrl.text = maxP.toString();
+                                                }
                                                 final opts = t == 'multiple-choice'
                                                     ? _model.checksList
                                                         .map((c) => {'label': (c['label'] ?? '').toString()})
@@ -703,7 +742,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
       case 'multiple-choice':
         return _buildOptionsSection(context);
       case 'single-check':
-        return const SizedBox.shrink();
+        return _buildSingleCheckConfig(context);
       case 'numeric':
         return _buildNumericConfig(context);
       case 'comment-box':
@@ -829,24 +868,131 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                   itemBuilder: (context, idx) {
                     final check = checks[idx];
                     final checkId = check['id']?.toString() ?? idx.toString();
-                    return OptionRowWidget(
+                    final checkPhotoReq = check['photoRequired'] == true;
+                    final checkMaxPhotos =
+                        (check['maxPhotos'] as num?)?.toInt().clamp(1, 5) ?? 5;
+                    return Column(
                       key: ValueKey(checkId),
-                      id: checkId,
-                      value: check['label']?.toString() ?? '',
-                      mode: widget.mode,
-                      onDelete: (id) async {
-                        safeSetState(() {
-                          _model.checksList
-                              .removeWhere((c) => c['id'] == id);
-                        });
-                      },
-                      onLabelChanged: (newLabel) async {
-                        safeSetState(() {
-                          final i = _model.checksList
-                              .indexWhere((c) => c['id'] == checkId);
-                          if (i >= 0) _model.checksList[i]['label'] = newLabel;
-                        });
-                      },
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        OptionRowWidget(
+                          id: checkId,
+                          value: check['label']?.toString() ?? '',
+                          mode: widget.mode,
+                          onDelete: (id) async {
+                            safeSetState(() {
+                              _model.checksList
+                                  .removeWhere((c) => c['id'] == id);
+                            });
+                          },
+                          onLabelChanged: (newLabel) async {
+                            safeSetState(() {
+                              final i = _model.checksList
+                                  .indexWhere((c) => c['id'] == checkId);
+                              if (i >= 0) {
+                                _model.checksList[i]['label'] = newLabel;
+                              }
+                            });
+                          },
+                        ),
+                        // ── Per-check photo config (compact single row) ──
+                        Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                              48, 0, 12, 4),
+                          child: Row(
+                            children: [
+                              Icon(Icons.photo_camera_outlined,
+                                  size: 14,
+                                  color: checkPhotoReq
+                                      ? FlutterFlowTheme.of(context).primary
+                                      : FlutterFlowTheme.of(context)
+                                          .secondaryText),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Photo required',
+                                style: FlutterFlowTheme.of(context)
+                                    .labelSmall
+                                    .override(
+                                      font: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      letterSpacing: 0.0,
+                                    ),
+                              ),
+                              SizedBox(
+                                height: 24,
+                                width: 40,
+                                child: FittedBox(
+                                  fit: BoxFit.contain,
+                                  child: Switch.adaptive(
+                                    value: checkPhotoReq,
+                                    activeTrackColor:
+                                        FlutterFlowTheme.of(context).primary,
+                                    onChanged: (val) => safeSetState(() {
+                                      final i = _model.checksList.indexWhere(
+                                          (c) => c['id'] == checkId);
+                                      if (i >= 0) {
+                                        _model.checksList[i]['photoRequired'] =
+                                            val;
+                                      }
+                                    }),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(Icons.collections_outlined,
+                                  size: 14,
+                                  color: FlutterFlowTheme.of(context)
+                                      .secondaryText),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Max:',
+                                style: FlutterFlowTheme.of(context)
+                                    .labelSmall
+                                    .override(
+                                      font: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      letterSpacing: 0.0,
+                                    ),
+                              ),
+                              const SizedBox(width: 2),
+                              DropdownButton<int>(
+                                value: checkMaxPhotos,
+                                underline: const SizedBox.shrink(),
+                                isDense: true,
+                                items: List.generate(5, (i) {
+                                  final v = i + 1;
+                                  return DropdownMenuItem(
+                                    value: v,
+                                    child: Text(
+                                      '$v',
+                                      style: FlutterFlowTheme.of(context)
+                                          .bodySmall
+                                          .override(
+                                            font: GoogleFonts.inter(
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .bodySmall
+                                                      .fontWeight,
+                                            ),
+                                            letterSpacing: 0.0,
+                                          ),
+                                    ),
+                                  );
+                                }),
+                                onChanged: (v) => safeSetState(() {
+                                  final i = _model.checksList.indexWhere(
+                                      (c) => c['id'] == checkId);
+                                  if (i >= 0) {
+                                    _model.checksList[i]['maxPhotos'] = v ?? 5;
+                                  }
+                                }),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     );
                   },
                 );
@@ -863,6 +1009,8 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                         'id': DateTime.now().millisecondsSinceEpoch.toString(),
                         'label': '',
                         'type': 'checkbox',
+                        'photoRequired': false,
+                        'maxPhotos': 5,
                       });
                     });
                   },
@@ -883,74 +1031,6 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                 ),
               ),
             ),
-            // ── Photo required toggle ─────────────────────────────────────
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(4, 0, 4, 0),
-              child: SwitchListTile.adaptive(
-                title: Text(
-                  'Require photo on failure',
-                  style: FlutterFlowTheme.of(context).labelMedium.override(
-                        font: GoogleFonts.inter(
-                          fontWeight: FlutterFlowTheme.of(context)
-                              .labelMedium
-                              .fontWeight,
-                        ),
-                        letterSpacing: 0.0,
-                      ),
-                ),
-                value: _photoRequired,
-                activeTrackColor: FlutterFlowTheme.of(context).primary,
-                onChanged: (val) => safeSetState(() => _photoRequired = val),
-                dense: true,
-                contentPadding:
-                    const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 0),
-              ),
-            ),
-            // ── Max photos selector ──────────────────────────────────────
-            Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),
-                child: Row(
-                  children: [
-                    Text(
-                      'Max photos per failure',
-                      style: FlutterFlowTheme.of(context).labelMedium.override(
-                            font: GoogleFonts.inter(
-                              fontWeight: FlutterFlowTheme.of(context)
-                                  .labelMedium
-                                  .fontWeight,
-                            ),
-                            letterSpacing: 0.0,
-                          ),
-                    ),
-                    const SizedBox(width: 12),
-                    DropdownButton<int>(
-                      value: int.tryParse(_maxPhotosCtrl.text) ?? 5,
-                      underline: const SizedBox.shrink(),
-                      items: List.generate(5, (i) {
-                        final v = i + 1;
-                        return DropdownMenuItem(
-                          value: v,
-                          child: Text(
-                            '$v',
-                            style: FlutterFlowTheme.of(context)
-                                .bodyMedium
-                                .override(
-                                  font: GoogleFonts.inter(
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                  ),
-                                  letterSpacing: 0.0,
-                                ),
-                          ),
-                        );
-                      }),
-                      onChanged: (v) => safeSetState(
-                          () => _maxPhotosCtrl.text = (v ?? 5).toString()),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
@@ -1027,6 +1107,8 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                         'id': DateTime.now().millisecondsSinceEpoch.toString(),
                         'label': '',
                         'type': 'checkbox',
+                        'photoRequired': false,
+                        'maxPhotos': 5,
                       });
                     });
                   },
@@ -1078,6 +1160,92 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
     );
   }
 
+  // ─── Single-check photo config ────────────────────────────────────────────
+
+  Widget _buildSingleCheckConfig(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(0, 16, 0, 0),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlutterFlowTheme.of(context).primaryBackground,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: FlutterFlowTheme.of(context).alternate,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.camera_alt_outlined,
+                size: 16,
+                color: FlutterFlowTheme.of(context).secondaryText),
+            const SizedBox(width: 6),
+            Text(
+              'Photo required',
+              style: FlutterFlowTheme.of(context).labelSmall.override(
+                    font: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    letterSpacing: 0.0,
+                  ),
+            ),
+            SizedBox(
+              height: 24,
+              width: 40,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Switch.adaptive(
+                  value: _photoRequired,
+                  activeTrackColor: FlutterFlowTheme.of(context).primary,
+                  onChanged: (val) => safeSetState(() {
+                    _photoRequired = val;
+                  }),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.collections_outlined,
+                size: 14,
+                color: FlutterFlowTheme.of(context).secondaryText),
+            const SizedBox(width: 4),
+            Text(
+              'Max:',
+              style: FlutterFlowTheme.of(context).labelSmall.override(
+                    font: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    letterSpacing: 0.0,
+                  ),
+            ),
+            const SizedBox(width: 2),
+            DropdownButton<int>(
+              value: int.tryParse(_maxPhotosCtrl.text)?.clamp(1, 5) ?? 5,
+              underline: const SizedBox.shrink(),
+              isDense: true,
+              items: List.generate(5, (i) {
+                final v = i + 1;
+                return DropdownMenuItem(
+                  value: v,
+                  child: Text(
+                    '$v',
+                    style: FlutterFlowTheme.of(context).bodySmall.override(
+                          font: GoogleFonts.inter(
+                            fontWeight: FlutterFlowTheme.of(context)
+                                .bodySmall
+                                .fontWeight,
+                          ),
+                          letterSpacing: 0.0,
+                        ),
+                  ),
+                );
+              }),
+              onChanged: (v) => safeSetState(() {
+                _maxPhotosCtrl.text = (v ?? 5).toString();
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ─── Numeric ─────────────────────────────────────────────────────────────────
 
   Widget _buildNumericConfig(BuildContext context) {
@@ -1101,6 +1269,37 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
         _configField(context, 'Placeholder', _placeholderCtrl,
             hint: 'e.g. Enter mileage'),
         _configField(context, 'Unit', _unitCtrl, hint: 'e.g. km, hrs'),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.camera_alt_outlined,
+                size: 14,
+                color: FlutterFlowTheme.of(context).secondaryText),
+            const SizedBox(width: 6),
+            Text(
+              'Enable OCR (camera text read)',
+              style: FlutterFlowTheme.of(context).labelSmall.override(
+                    font: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    letterSpacing: 0.0,
+                  ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 24,
+              width: 40,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Switch.adaptive(
+                  value: _photoRequired,
+                  activeTrackColor: FlutterFlowTheme.of(context).primary,
+                  onChanged: (val) => safeSetState(() {
+                    _photoRequired = val;
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -1115,6 +1314,37 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
         _configField(context, 'Max Length', _maxLengthCtrl,
             hint: 'e.g. 500',
             keyboard: TextInputType.number),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.camera_alt_outlined,
+                size: 14,
+                color: FlutterFlowTheme.of(context).secondaryText),
+            const SizedBox(width: 6),
+            Text(
+              'Enable OCR (camera text read)',
+              style: FlutterFlowTheme.of(context).labelSmall.override(
+                    font: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    letterSpacing: 0.0,
+                  ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 24,
+              width: 40,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Switch.adaptive(
+                  value: _photoRequired,
+                  activeTrackColor: FlutterFlowTheme.of(context).primary,
+                  onChanged: (val) => safeSetState(() {
+                    _photoRequired = val;
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -1129,8 +1359,51 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
         _configField(context, 'Max Length', _maxLengthCtrl,
             hint: 'e.g. 50',
             keyboard: TextInputType.number),
-        _configField(context, 'Regex Validation (optional)', _regexCtrl,
-            hint: r'e.g. ^\d{4}-\w+$'),
+        _configField(context, 'Format Pattern (optional)', _regexCtrl,
+            hint: 'e.g. ABC 1234 or 123-456-789'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            'Letters = A-Z position, Digits = 0-9 position, spaces & dashes kept as-is',
+            style: FlutterFlowTheme.of(context).labelSmall.override(
+                  font: GoogleFonts.inter(fontWeight: FontWeight.w400),
+                  color: const Color(0xFF94A3B8),
+                  fontSize: 10,
+                  letterSpacing: 0.0,
+                ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.camera_alt_outlined,
+                size: 14,
+                color: FlutterFlowTheme.of(context).secondaryText),
+            const SizedBox(width: 6),
+            Text(
+              'Enable OCR (camera text read)',
+              style: FlutterFlowTheme.of(context).labelSmall.override(
+                    font: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    letterSpacing: 0.0,
+                  ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 24,
+              width: 40,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Switch.adaptive(
+                  value: _photoRequired,
+                  activeTrackColor: FlutterFlowTheme.of(context).primary,
+                  onChanged: (val) => safeSetState(() {
+                    _photoRequired = val;
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

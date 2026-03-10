@@ -259,7 +259,9 @@ List<dynamic> makeInitialCheck(String id) {
     {
       "id": id,
       "label": "e.g Is the vehicle registration up to date?",
-      "type": "checkbox"
+      "type": "checkbox",
+      "photoRequired": false,
+      "maxPhotos": 5
     }
   ];
 }

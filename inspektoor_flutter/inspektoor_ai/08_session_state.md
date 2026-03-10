@@ -1,5 +1,5 @@
 Session State
-Last updated: 2026-03-07
+Last updated: 2026-03-10
 
 --------------------------------------------------
 What the system currently is
@@ -31,7 +31,7 @@ Working end-to-end:
   - Inspection form schema manipulation: wrap/unwrap, card builder,
     add/replace/delete/reorder items — all in custom actions
   - In-memory inspection draft: init, step through items, GPS stamp, undo
-  - Inspection execution UI (INSP-01 in QA): InspectionRunnerView renders
+  - Inspection execution UI (INSP-01 DONE): InspectionRunnerView renders
     all item types (single-check, multi-check, multiple-choice, numeric,
     comment-box, alphanumeric, signature). Photo type still stubbed.
     UI modernisation complete: custom colour tokens (inspection_tokens.dart),
@@ -39,6 +39,19 @@ Working end-to-end:
     chips, failure note panel with camera-only photo evidence (4:3 aspect
     ratio, dashed border empty state, full image display), context-aware
     multi-check footer (grey/blue/amber), "SECTION QUESTION" body label.
+    Per-sub-check photoRequired and maxPhotos (each check object carries its
+    own values, falls back to item-level config for old templates).
+    Tap-to-toggle on sub-check cards (first tap = pass, second = fail).
+    Hard reset of failure notes/photos when toggling back to pass.
+    Title bar shows "INSPECTION" label above asset name.
+    Back navigation guarded against double confirm dialog.
+    Comment-box input with OCR camera (freeText mode, preserves case,
+    collapses newlines), char count ring (amber warning at 90%), maxLength
+    from config (default 500), quick-fill chips. OCR camera icon always
+    allows rescan on all input types.
+    Progress bar directional animation: blue overlay sweeps left-to-right
+    on forward, right-to-left on backward. Multi-check current step shows
+    sub-check pass/fail colors as base layer under blue overlay.
     Summary screen shown on completion with per-item defect detection,
     pending submission (INSP-02).
     File: lib/features/inspection/inspection_runner_view.dart
@@ -59,12 +72,11 @@ What should be worked on next
 --------------------------------------------------
 
 1. Inspection execution  [highest priority]
-   INSP-01 (page UI) is built and in QA as of 2026-03-07. Next steps:
-     a. Complete QA on INSP-01 and resolve any issues found
-     b. INSP-02: Write caSubmitInspection to persist the draft to inspections,
+   INSP-01 (page UI) is DONE as of 2026-03-10. Next steps:
+     a. INSP-02: Write caSubmitInspection to persist the draft to inspections,
         inspection_items, and inspection_item_values
-     c. INSP-03: Wire submission action into the summary view
-     d. INSP-04: Update asset.last_inspected_at on submit
+     b. INSP-03: Wire submission action into the summary view
+     c. INSP-04: Update asset.last_inspected_at on submit
 
 2. Verify and close partially-built flows
    Before building new modules, confirm:

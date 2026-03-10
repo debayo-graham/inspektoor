@@ -87,9 +87,11 @@ Future<dynamic> buildCard(
 
   switch (type) {
     case "single-check":
+      final smp = _parseIntOrZero(maxPhotos);
       config = {
         "options": opts,
         "photoRequired": photoRequired ?? false,
+        "maxPhotos": smp < 1 || smp > 5 ? 5 : smp,
       };
       break;
 
@@ -116,15 +118,18 @@ Future<dynamic> buildCard(
         "max": _parseNum(maxVal),
         "placeholder": placeholderStr,
         "unit": unitStr.isEmpty ? null : unitStr,
+        "ocrEnabled": photoRequired ?? false,
         "options": opts,
       };
       break;
 
     case "photo":
+      final pMin = _parseIntOrZero(minPhotos);
+      final pMax = _parseIntOrZero(maxPhotos);
       config = {
         "note": note ?? "",
-        "minPhotos": _parseIntOrZero(minPhotos),
-        "maxPhotos": _parseIntOrZero(maxPhotos),
+        "minPhotos": pMin < 1 ? 1 : pMin > 5 ? 5 : pMin,
+        "maxPhotos": pMax < 1 ? 5 : pMax > 5 ? 5 : pMax,
         "examples": examples ?? [],
         "options": opts,
       };
@@ -134,6 +139,7 @@ Future<dynamic> buildCard(
       config = {
         "placeholder": placeholderStr,
         "maxLength": _parseIntOrNull(maxLength),
+        "ocrEnabled": photoRequired ?? false,
         "options": opts,
       };
       break;
@@ -149,7 +155,8 @@ Future<dynamic> buildCard(
       config = {
         "placeholder": placeholderStr,
         "maxLength": _parseIntOrNull(maxLength),
-        "regex": regexStr.isEmpty ? null : regexStr,
+        "formatPattern": regexStr.isEmpty ? null : regexStr,
+        "ocrEnabled": photoRequired ?? false,
         "options": opts,
       };
       break;

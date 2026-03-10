@@ -249,7 +249,6 @@ class _ThumbnailStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canAdd = photos.length < maxPhotos;
-    final itemCount = photos.length + (canAdd ? 1 : 0);
 
     return Container(
       height: 84,
@@ -257,7 +256,7 @@ class _ThumbnailStrip extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: itemCount,
+        itemCount: maxPhotos,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (_, i) {
           if (i < photos.length) {
@@ -270,8 +269,11 @@ class _ThumbnailStrip extends StatelessWidget {
               onDelete: () => onDelete(i),
             );
           }
-          // "+" add tile
-          return _AddTile(accentColor: accentColor, onTap: onAdd);
+          // First empty slot is the "+" add tile, rest are empty placeholders
+          if (i == photos.length && canAdd) {
+            return _AddTile(accentColor: accentColor, onTap: onAdd);
+          }
+          return _EmptySlot(index: i + 1);
         },
       ),
     );
@@ -336,6 +338,36 @@ class _Thumbnail extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── _EmptySlot ──────────────────────────────────────────────────────────
+
+class _EmptySlot extends StatelessWidget {
+  final int index;
+  const _EmptySlot({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: const DashedBorderPainter(
+        color: _kDarkBorder,
+        radius: 10,
+        strokeWidth: 1.5,
+        dashWidth: 5,
+        dashGap: 3,
+      ),
+      child: SizedBox(
+        width: 70,
+        height: 70,
+        child: Center(
+          child: Text(
+            '$index',
+            style: _inter(13, FontWeight.w500, Colors.white24),
+          ),
+        ),
       ),
     );
   }

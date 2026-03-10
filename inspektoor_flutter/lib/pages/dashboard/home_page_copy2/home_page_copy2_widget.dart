@@ -51,6 +51,11 @@ class _HomePageCopy2WidgetState extends State<HomePageCopy2Widget> {
         _model.appUserRow?.firstOrNull?.firstName,
         'No Name',
       );
+      FFAppState().fullName = valueOrDefault<String>(
+        _model.appUserRow?.firstOrNull?.fullName ??
+            _model.appUserRow?.firstOrNull?.firstName,
+        'No Name',
+      );
       FFAppState().update(() {});
     });
 

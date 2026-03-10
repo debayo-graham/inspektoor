@@ -1733,6 +1733,37 @@ class _EditInspectionFormPageWidgetState
                                                     ),
                                                     Padding(
                                                       padding:
+                                                          const EdgeInsetsDirectional
+                                                              .fromSTEB(
+                                                                  0.0,
+                                                                  6.0,
+                                                                  0.0,
+                                                                  0.0),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.symmetric(
+                                                            horizontal: 8, vertical: 3),
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(0xFFF1F5F9),
+                                                          borderRadius:
+                                                              BorderRadius.circular(6),
+                                                        ),
+                                                        child: Text(
+                                                          labelFromType(
+                                                            getJsonField(
+                                                              listViewInspectionFormItemsItem,
+                                                              r'''$.type''',
+                                                            )?.toString(),
+                                                          ),
+                                                          style: GoogleFonts.inter(
+                                                            fontSize: 11,
+                                                            fontWeight: FontWeight.w500,
+                                                            color: const Color(0xFF64748B),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding:
                                                           EdgeInsetsDirectional
                                                               .fromSTEB(
                                                                   0.0,

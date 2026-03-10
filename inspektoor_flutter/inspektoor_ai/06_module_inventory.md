@@ -166,9 +166,9 @@ File / Photo Attachment
 PLACEHOLDER ONLY
 --------------------------------------------------
 
-Inspection Execution (Inspect Asset)
+Inspection Execution (Inspect Asset)  [INSP-01 DONE — 2026-03-10]
   Page:    pages/inspections/inspect_asset/
-  View:    lib/features/inspection/inspection_runner_view.dart  [NEW — INSP-01]
+  View:    lib/features/inspection/inspection_runner_view.dart
   Detail:  InspectionRunnerView renders the full step-by-step inspection UI.
            Reads FFAppState.templateJson (form definition) and derives current
            step from FFAppState.inspectionDraftJson answered items count.
@@ -182,11 +182,32 @@ Inspection Execution (Inspect Asset)
            pass/fail chips, failure note panel with camera-only photo
            evidence (4:3 aspect ratio display), context-aware multi-check
            footer (grey/blue/amber), "SECTION QUESTION" body label.
+           Per-sub-check photoRequired and maxPhotos (per-check object,
+           falls back to item-level config for old templates).
+           Tap-to-toggle on sub-check cards (first tap = pass).
+           Hard reset of failure notes/photos on pass toggle.
+           Title bar: "INSPECTION" label above asset name.
+           Back navigation: re-entrancy guard prevents double confirm dialog.
+           Comment-box input (comment_box_input.dart): OCR camera inside
+           textarea, freeText extraction (preserves case, collapses newlines),
+           char count ring with amber warning at 90%, maxLength from config
+           (default 500), quick-fill chips.
+           OCR camera (ocr_camera_screen.dart): custom camera with viewfinder,
+           3 extraction modes (numeric, alphanumeric, freeText),
+           largeViewfinder param for paragraph capture.
+           Progress bar: directional blue overlay (left-to-right forward,
+           right-to-left backward), multi-check base colors under overlay.
            Wires existing actions: addOrUpdateItemValue, undoLastStep,
            buildValuesForPassAllSubChecks.
            Completion screen shown when all items answered; submission
            placeholder present pending INSP-02.
            No FlutterFlow layer imports — clean Dart only.
+  New files (session 4):
+    lib/features/inspection/components/item_inputs/comment_box_input.dart
+    lib/features/inspection/components/item_inputs/numeric_input.dart
+    lib/features/inspection/components/item_inputs/alphanumeric_input.dart
+    lib/features/inspection/components/item_inputs/single_check_card.dart
+    lib/common/components/ocr_camera_screen.dart
 
 --------------------------------------------------
 NOT STARTED

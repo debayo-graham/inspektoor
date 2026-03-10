@@ -39,9 +39,19 @@ const List<InspectionItemTypeDef> kInspectionItemTypes = [
   InspectionItemTypeDef(type: 'signature',       label: 'Signature',               group: 'Data Entry'),
 ];
 
-/// All display labels in dropdown order.
-List<String> get kItemTypeLabels =>
-    kInspectionItemTypes.map((t) => t.label).toList();
+/// All display labels in dropdown order (signature excluded — auto-appended).
+List<String> get kItemTypeLabels => kInspectionItemTypes
+    .where((t) => t.type != 'signature')
+    .map((t) => t.label)
+    .toList();
+
+/// Returns the display label for a given canonical type string.
+/// Falls back to the type string itself if not found.
+String labelFromType(String? type) => kInspectionItemTypes
+    .where((t) => t.type == type)
+    .map((t) => t.label)
+    .firstOrNull ??
+    (type ?? 'Unknown');
 
 /// Returns the canonical type string for a given display label.
 /// Falls back to 'multi-check' for unknown labels (backward compatibility).

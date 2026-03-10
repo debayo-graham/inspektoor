@@ -32,6 +32,12 @@ class FFAppState extends ChangeNotifier {
     _displayName = value;
   }
 
+  String _fullName = '';
+  String get fullName => _fullName;
+  set fullName(String value) {
+    _fullName = value;
+  }
+
   String _selectedMenuKey = 'homePage';
   String get selectedMenuKey => _selectedMenuKey;
   set selectedMenuKey(String value) {

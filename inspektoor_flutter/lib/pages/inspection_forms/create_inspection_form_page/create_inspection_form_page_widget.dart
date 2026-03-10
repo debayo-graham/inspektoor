@@ -1636,6 +1636,37 @@ class _CreateInspectionFormPageWidgetState
                                                           EdgeInsetsDirectional
                                                               .fromSTEB(
                                                                   0.0,
+                                                                  6.0,
+                                                                  0.0,
+                                                                  0.0),
+                                                      child: Container(
+                                                        padding: EdgeInsets.symmetric(
+                                                            horizontal: 8, vertical: 3),
+                                                        decoration: BoxDecoration(
+                                                          color: Color(0xFFF1F5F9),
+                                                          borderRadius:
+                                                              BorderRadius.circular(6),
+                                                        ),
+                                                        child: Text(
+                                                          labelFromType(
+                                                            getJsonField(
+                                                              listViewInspectionFormItemsItem,
+                                                              r'''$.type''',
+                                                            )?.toString(),
+                                                          ),
+                                                          style: GoogleFonts.inter(
+                                                            fontSize: 11,
+                                                            fontWeight: FontWeight.w500,
+                                                            color: Color(0xFF64748B),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding:
+                                                          EdgeInsetsDirectional
+                                                              .fromSTEB(
+                                                                  0.0,
                                                                   30.0,
                                                                   0.0,
                                                                   0.0),

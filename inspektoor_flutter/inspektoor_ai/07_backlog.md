@@ -10,7 +10,7 @@ MODULE: INSPECTION EXECUTION
 Priority: Critical. The inspection draft infrastructure exists but the
 execution page is an empty placeholder. Nothing in this module works end-to-end.
 
-INSP-01  Build inspect_asset page UI  [QA — 2026-03-07]
+INSP-01  Build inspect_asset page UI  [DONE — 2026-03-10]
   Files built (all clean Dart, no FlutterFlow imports):
     lib/features/inspection/inspection_runner_view.dart
     lib/features/inspection/inspection_session.dart
@@ -113,6 +113,95 @@ INSP-01  Build inspect_asset page UI  [QA — 2026-03-07]
         (full image visible, consistent height, no cropping). ✕ remove (top-right),
         "Retake" pill (bottom-right).
       - Camera-only capture via selectMedia(mediaSource: MediaSource.camera).
+
+  Per-sub-check photoRequired (added 2026-03-08):
+    card_editor_sheet_widget.dart
+      - Item-level photoRequired toggle removed. Replaced with per-check config
+        row below each check: camera icon + "Photo required" switch + "Max:"
+        dropdown (1-5). Only max dropdown visible when photoRequired is ON.
+      - New checks created with photoRequired: false, maxPhotos: 5.
+      - Edit mode preserves per-check photoRequired and maxPhotos from check objects.
+
+    custom_functions.dart
+      - makeInitialCheck() now includes photoRequired: false, maxPhotos: 5.
+
+    inspection_item_step.dart
+      - Validation (_canNext / _handleNext) reads photoRequired per-check from
+        the check object, with fallback to item-level config.photoRequired.
+      - Hard reset: toggling a sub-check from fail to pass clears _failureNotes
+        and _failurePhotos for that check ID. Also clears on Pass All.
+
+    multi_check_list.dart
+      - Each _MultiCheckCard reads check['photoRequired'] and check['maxPhotos']
+        with fallback to item-level props for backward compatibility.
+      - Sub-check cards wrapped in GestureDetector for tap-to-toggle:
+        first tap on unset card → pass, second tap → fail.
+
+  UX polish (added 2026-03-08):
+    inspection_progress_header.dart
+      - AnimatedContainer duration reduced from 700ms to 400ms.
+
+    inspect_asset_widget.dart
+      - Title bar: "INSPECTION" label (size 10, gray, letter-spacing 0.5)
+        centered above asset name.
+      - Double confirm dialog fix: _isShowingConfirm guard via setState() +
+        try/finally ensures PopScope cannot trigger a second dialog even in
+        release mode (plain field assignment was not synchronous enough).
+        DONE — tested debug + release 2026-03-09.
+
+  Comment-box input + OCR (added 2026-03-09):
+    New files:
+      lib/features/inspection/components/item_inputs/comment_box_input.dart
+      lib/common/components/ocr_camera_screen.dart
+
+    comment_box_input.dart
+      - Rich textarea with character count ring (CustomPainter), quick-fill chips
+      - OCR camera icon inside textarea (top-right, Positioned)
+      - maxLength from config, default 500; _canNext blocks if text exceeds limit
+      - Character count ring warns amber (kInspWarning) at 90% threshold
+      - Quick-fill chip row (hardcoded presets; INSP-01b will pull from history)
+
+    ocr_camera_screen.dart
+      - Custom camera with viewfinder overlay for text extraction
+      - OcrExtractionMode enum: numeric, alphanumeric, freeText
+      - freeText mode preserves original case, collapses newlines into spaces
+      - largeViewfinder parameter: wider/taller box for paragraph capture
+        (82% width, 0.65 aspect ratio vs default 62%/0.35)
+
+    inspection_item_step.dart
+      - Comment-box maxLength defaults to 500 from config
+      - _canNext blocks if text exceeds maxLength
+      - Footer shows "Comment exceeds N characters" when over limit
+
+    numeric_input.dart, alphanumeric_input.dart
+      - Camera icon stays tappable for rescan after first scan (not disabled)
+
+  Progress bar directional animation (added 2026-03-09):
+    inspection_progress_header.dart
+      - InspectionSegmentBar receives `forward` prop from parent
+      - Blue overlay sweeps left-to-right on forward, right-to-left on backward
+      - Uses Align + FractionallySizedBox inside Stack (not FractionallySizedBox
+        alignment alone — that only positions child within itself, not in Stack)
+      - Multi-check current step: sub-check colors as base layer under blue overlay
+        via _currentMultiCheckSegment method
+      - ValueKey includes step index + forward direction for animation restart
+
+    inspection_runner_view.dart
+      - Passes _goingForward as `forward` prop to InspectionProgressHeader
+
+INSP-01b  Comment-box "Quick Fill" from previous inspections
+  Gap:  The comment-box input has hardcoded quick-fill chips
+        ("No issues noted", "Minor wear observed", etc.). These should
+        pull from the user's previous inspection comment values for the
+        same template item, so frequently-used comments are one tap away.
+  Work: After INSP-02 (submission) is implemented and inspection history
+        exists in the database:
+          1. Query the most recent N (e.g. 5) distinct comment values
+             for the same template_item_key from previous inspections.
+          2. Pass them as the `quickFills` parameter to
+             InspectionCommentBoxInput.
+          3. Fall back to the hardcoded defaults when no history exists.
+  Depends on: INSP-02
 
 INSP-02  Implement inspection submission action
   Gap:  No action submits FFAppState.inspectionDraftJson to the database.

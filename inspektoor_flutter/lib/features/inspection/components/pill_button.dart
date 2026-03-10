@@ -21,7 +21,7 @@ class InspectionPillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(100),
+      borderRadius: BorderRadius.circular(16),
     );
 
     final children = <Widget>[
@@ -54,20 +54,34 @@ class InspectionPillButton extends StatelessWidget {
       );
     }
 
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: kInspPrimary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        shape: shape,
-        textStyle: inspInterStyle(14, FontWeight.w600, Colors.white),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: children,
+    return Container(
+      decoration: onTap != null
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: kInspPrimary.withValues(alpha: 0.35),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            )
+          : null,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: kInspPrimary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape: shape,
+          textStyle: inspInterStyle(14, FontWeight.w600, Colors.white),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: children,
+        ),
       ),
     );
   }

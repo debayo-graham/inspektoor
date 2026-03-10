@@ -23,7 +23,7 @@ class InspectionSession {
     if (decoded is! Map || decoded['items'] is! List) {
       throw const FormatException('Invalid template format.');
     }
-    return (decoded['items'] as List)
+    final items = (decoded['items'] as List)
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList()
@@ -31,6 +31,22 @@ class InspectionSession {
         (a, b) => ((a['order'] as num?) ?? 0)
             .compareTo((b['order'] as num?) ?? 0),
       );
+
+    // Remove any user-added signature items (signature is now auto-appended).
+    items.removeWhere((e) => e['type'] == 'signature');
+
+    // Always append a mandatory signature step at the end.
+    items.add({
+      'key': '__final_signature__',
+      'type': 'signature',
+      'label': 'Sign here',
+      'order': 999999,
+      'config': <String, dynamic>{
+        'note': 'Please sign to complete the inspection',
+      },
+    });
+
+    return items;
   }
 
   // ── Draft queries ─────────────────────────────────────────────────────────
@@ -60,20 +76,57 @@ class InspectionSession {
   /// Returns a map of template_item_key → hasDefect for all answered items.
   ///
   /// An item has a defect when any of its values equals 'fail', 'failed',
-  /// or 'no' (case-insensitive).
-  static Map<String, bool> defectMap(String draftRaw) {
+  /// or 'no' (case-insensitive), OR when a numeric value is out of the
+  /// configured min/max range.
+  static Map<String, bool> defectMap(
+    String draftRaw, {
+    List<Map<String, dynamic>> templateItems = const [],
+  }) {
     if (draftRaw.isEmpty) return {};
     try {
       final draft = json.decode(draftRaw);
       final items = (draft['items'] as List? ?? []);
+
+      // Build a lookup: template_item_key → template config
+      final configByKey = <String, Map<String, dynamic>>{};
+      for (final t in templateItems) {
+        final k = t['key'] as String? ?? '';
+        if (k.isNotEmpty) configByKey[k] = t;
+      }
+
       final result = <String, bool>{};
       for (final item in items) {
         final key = item['template_item_key'] as String? ?? '';
         final values = (item['values'] as List? ?? []);
-        final hasDefect = values.any((v) {
-          final val = (v as Map?)?['value'] as String? ?? '';
-          return ['fail', 'failed', 'no'].contains(val.toLowerCase());
+
+        // Standard check: fail / failed / no
+        var hasDefect = values.any((v) {
+          final raw = (v as Map?)?['value'];
+          if (raw is! String) return false;
+          return ['fail', 'failed', 'no'].contains(raw.toLowerCase());
         });
+
+        // Numeric range check
+        if (!hasDefect && configByKey.containsKey(key)) {
+          final tpl = configByKey[key]!;
+          final type = tpl['type'] as String? ?? '';
+          if (type == 'numeric') {
+            final cfg = Map<String, dynamic>.from(tpl['config'] as Map? ?? {});
+            final mn = cfg['min'] as num?;
+            final mx = cfg['max'] as num?;
+            if (mn != null || mx != null) {
+              final firstV = values.isNotEmpty ? values.first : null;
+              final valStr = (firstV as Map?)?['value'] as String? ?? '';
+              final v = num.tryParse(valStr.trim());
+              if (v != null) {
+                final outOfRange =
+                    (mn != null && v < mn) || (mx != null && v > mx);
+                if (outOfRange) hasDefect = true;
+              }
+            }
+          }
+        }
+
         result[key] = hasDefect;
       }
       return result;
@@ -104,6 +157,7 @@ class InspectionSession {
       type == 'alphanumeric' ||
       type == 'photo' ||
       type == 'signature' ||
+      type == 'single-check' ||
       type == 'multi-check' ||
       (type == 'multiple-choice' && allowMultiple);
 

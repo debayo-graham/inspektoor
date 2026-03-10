@@ -165,7 +165,7 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
     return GestureDetector(
       onTap: _captureAndPreview,
       child: CustomPaint(
-        painter: DashedBorderPainter(color: widget.borderColor),
+        foregroundPainter: DashedBorderPainter(color: widget.borderColor),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Container(

@@ -18,8 +18,10 @@ class InspectionMultiCheckList extends StatelessWidget {
   final void Function(String id, List<Uint8List>) onPhotosChanged;
   final Future<void> Function() onPassAll;
   final bool submitting;
-  final bool photoRequired;
-  final int maxPhotos;
+  /// Item-level fallback for backward compatibility with old templates.
+  final bool itemPhotoRequired;
+  final int itemMaxPhotos;
+  final bool isTablet;
 
   const InspectionMultiCheckList({
     super.key,
@@ -32,34 +34,44 @@ class InspectionMultiCheckList extends StatelessWidget {
     required this.onPhotosChanged,
     required this.onPassAll,
     required this.submitting,
-    this.photoRequired = false,
-    this.maxPhotos = 5,
+    this.itemPhotoRequired = false,
+    this.itemMaxPhotos = 5,
+    this.isTablet = false,
   });
 
   bool get _allAnswered => checks.isNotEmpty &&
       checks.every((c) => (values[c['id'] as String? ?? ''] ?? '').isNotEmpty);
   bool get _allPassed => _allAnswered &&
       checks.every((c) => values[c['id'] as String? ?? ''] == 'pass');
-  bool get _anyFailed =>
-      checks.any((c) => values[c['id'] as String? ?? ''] == 'fail');
-  int get _failCount =>
-      checks.where((c) => values[c['id'] as String? ?? ''] == 'fail').length;
+  Widget _buildCard(Map<String, dynamic> check) {
+    final id = check['id'] as String? ?? '';
+    final label = check['label'] as String? ?? '';
+    final value = values[id] ?? '';
+    final checkPhotoReq =
+        check['photoRequired'] as bool? ?? itemPhotoRequired;
+    final checkMaxPhotos =
+        (check['maxPhotos'] as num?)?.toInt().clamp(1, 5) ?? itemMaxPhotos;
+    return _MultiCheckCard(
+      id: id,
+      label: label,
+      value: value,
+      note: failureNotes[id] ?? '',
+      photos: failurePhotos[id] ?? [],
+      disabled: submitting,
+      onToggle: (v) => onToggle(id, v),
+      onNoteChanged: (n) => onNoteChanged(id, n),
+      onPhotosChanged: (list) => onPhotosChanged(id, list),
+      photoRequired: checkPhotoReq,
+      maxPhotos: checkMaxPhotos,
+      isTablet: isTablet,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Status banners ────────────────────────────────────────────────────
-        if (_allPassed) ...[
-          _AllPassedBanner(),
-          const SizedBox(height: 12),
-        ],
-        if (_anyFailed && _allAnswered) ...[
-          _IssuesBanner(count: _failCount),
-          const SizedBox(height: 12),
-        ],
-
         // ── Pass All button (hidden when all already passed) ───────────────
         if (!_allPassed) ...[
           _PassAllButton(onTap: submitting ? null : onPassAll),
@@ -67,143 +79,14 @@ class InspectionMultiCheckList extends StatelessWidget {
         ],
 
         // ── Item cards ────────────────────────────────────────────────────
-        ...checks.map((check) {
-          final id = check['id'] as String? ?? '';
-          final label = check['label'] as String? ?? '';
-          final value = values[id] ?? '';
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _MultiCheckCard(
-              id: id,
-              label: label,
-              value: value,
-              note: failureNotes[id] ?? '',
-              photos: failurePhotos[id] ?? [],
-              disabled: submitting,
-              onToggle: (v) => onToggle(id, v),
-              onNoteChanged: (n) => onNoteChanged(id, n),
-              onPhotosChanged: (list) => onPhotosChanged(id, list),
-              photoRequired: photoRequired,
-              maxPhotos: maxPhotos,
-            ),
-          );
-        }),
+        ...checks.map((check) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildCard(check),
+            )),
       ],
     );
   }
-}
 
-// ─── _AllPassedBanner ─────────────────────────────────────────────────────────
-
-class _AllPassedBanner extends StatelessWidget {
-  const _AllPassedBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kInspPassBorder, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF10B981), Color(0xFF059669)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: kInspPassFill.withValues(alpha: 0.4),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Section Complete — All Passed',
-                  style: inspInterStyle(13, FontWeight.w800, Color(0xFF065F46)),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'All items are verified and up to date.',
-                  style: inspInterStyle(12, FontWeight.w400, Color(0xFF059669)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── _IssuesBanner ────────────────────────────────────────────────────────────
-
-class _IssuesBanner extends StatelessWidget {
-  final int count;
-  const _IssuesBanner({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: kInspWarningBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kInspWarningBorder, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: kInspWarning,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.warning_amber_rounded,
-                color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Issues Found',
-                  style: inspInterStyle(13, FontWeight.w800, Color(0xFF92400E)),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$count item${count == 1 ? '' : 's'} failed. Notes required before proceeding.',
-                  style: inspInterStyle(12, FontWeight.w400, Color(0xFFB45309)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ─── _PassAllButton ───────────────────────────────────────────────────────────
@@ -274,6 +157,7 @@ class _MultiCheckCard extends StatelessWidget {
   final void Function(List<Uint8List>) onPhotosChanged;
   final bool photoRequired;
   final int maxPhotos;
+  final bool isTablet;
 
   const _MultiCheckCard({
     required this.id,
@@ -287,6 +171,7 @@ class _MultiCheckCard extends StatelessWidget {
     required this.onPhotosChanged,
     this.photoRequired = false,
     this.maxPhotos = 5,
+    this.isTablet = false,
   });
 
   Color get _bg =>
@@ -306,52 +191,60 @@ class _MultiCheckCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Main row ─────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _StatusDot(value: value),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: inspInterStyle(
-                            14, FontWeight.w600, kInspPrimaryText),
-                      ),
-                      if (value.isNotEmpty) ...[
-                        const SizedBox(height: 2),
+          // ── Main row (tappable to toggle) ─────────────────────────────
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: disabled
+                ? null
+                : () => onToggle(value == 'pass' ? 'fail' : 'pass'),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _StatusDot(value: value),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          value == 'pass'
-                              ? '✓ Passed'
-                              : '✗ Failed — note required',
+                          label,
                           style: inspInterStyle(
-                            11,
-                            FontWeight.w600,
-                            value == 'pass' ? kInspPassFill : kInspFailFill,
-                          ),
+                              14, FontWeight.w600, kInspPrimaryText),
                         ),
+                        if (value.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            value == 'pass'
+                                ? '✓ Passed'
+                                : photoRequired
+                                    ? '⚠ Photo required'
+                                    : '⚠ Note or photo required',
+                            style: inspInterStyle(
+                              11,
+                              FontWeight.w600,
+                              value == 'pass' ? kInspPassFill : kInspFailText,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                _FilledSegmentedControl(
-                  value: value,
-                  disabled: disabled,
-                  onToggle: onToggle,
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  _FilledSegmentedControl(
+                    value: value,
+                    disabled: disabled,
+                    onToggle: onToggle,
+                  ),
+                ],
+              ),
             ),
           ),
 
           // ── Failure note panel ────────────────────────────────────────────
           if (value == 'fail') ...[
-            Divider(height: 1, thickness: 1, color: kInspFailBorder),
+            const Divider(height: 1, thickness: 1, color: kInspBorder),
             _FailureNotePanel(
               note: note,
               onChanged: onNoteChanged,
@@ -359,6 +252,7 @@ class _MultiCheckCard extends StatelessWidget {
               onPhotosChanged: onPhotosChanged,
               photoRequired: photoRequired,
               maxPhotos: maxPhotos,
+              isTablet: isTablet,
             ),
           ],
         ],
@@ -378,7 +272,7 @@ class _StatusDot extends StatelessWidget {
     final color = value == 'pass'
         ? kInspPassFill
         : value == 'fail'
-            ? kInspFailFill
+            ? kInspFailDot
             : const Color(0xFFCBD5E1); // slate-300
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -491,6 +385,7 @@ class _FailureNotePanel extends StatefulWidget {
   final void Function(List<Uint8List>) onPhotosChanged;
   final bool photoRequired;
   final int maxPhotos;
+  final bool isTablet;
 
   const _FailureNotePanel({
     required this.note,
@@ -499,6 +394,7 @@ class _FailureNotePanel extends StatefulWidget {
     required this.onPhotosChanged,
     this.photoRequired = false,
     this.maxPhotos = 5,
+    this.isTablet = false,
   });
 
   @override
@@ -520,73 +416,97 @@ class _FailureNotePanelState extends State<_FailureNotePanel> {
     super.dispose();
   }
 
+  Widget _noteField({bool expand = false}) => TextField(
+        controller: _ctrl,
+        onChanged: widget.onChanged,
+        maxLines: expand ? null : 3,
+        minLines: expand ? null : 3,
+        expands: expand,
+        textAlignVertical: expand ? TextAlignVertical.top : null,
+        style: inspInterStyle(13, FontWeight.w400, kInspPrimaryText),
+        decoration: InputDecoration(
+          hintText: 'Describe the issue…',
+          hintStyle: inspInterStyle(13, FontWeight.w400, kInspSecText),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: kInspBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: kInspBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: kInspPrimary, width: 1.5),
+          ),
+        ),
+      );
+
+  Widget _photoBox() => PhotoCaptureBox(
+        photos: widget.photos,
+        maxPhotos: widget.maxPhotos,
+        borderColor: kInspBorder,
+        accentColor: const Color(0xFF0284C7),
+        accentBgColor: const Color(0xFFE0F2FE),
+        onPhotosChanged: widget.onPhotosChanged,
+        onCapturePhoto: () async {
+          final selected =
+              await selectMedia(mediaSource: MediaSource.camera);
+          if (selected != null && selected.isNotEmpty) {
+            return selected.first.bytes;
+          }
+          return null;
+        },
+        emptyLabel: 'Tap to take photo',
+        emptySubtitle: 'Evidence of the issue',
+      );
+
   @override
   Widget build(BuildContext context) {
+    final header = Text(
+      'ISSUE DETAILS',
+      style: inspInterStyle(10, FontWeight.w700, const Color(0xFF64748B))
+          .copyWith(letterSpacing: 1.2),
+    );
+
+    if (widget.isTablet) {
+      // Side-by-side note + photo on tablet (matched height)
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            header,
+            const SizedBox(height: 8),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _noteField(expand: true)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _photoBox()),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'FAILURE EVIDENCE',
-            style: inspInterStyle(10, FontWeight.w700, kInspFailFill)
-                .copyWith(letterSpacing: 1.2),
-          ),
+          header,
           const SizedBox(height: 8),
-          TextField(
-            controller: _ctrl,
-            onChanged: widget.onChanged,
-            maxLines: 3,
-            style: inspInterStyle(13, FontWeight.w400, kInspPrimaryText),
-            decoration: InputDecoration(
-              hintText: 'Describe the issue…',
-              hintStyle: inspInterStyle(13, FontWeight.w400, kInspSecText),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: kInspFailBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: kInspFailBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: kInspFailFill, width: 1.5),
-              ),
-            ),
-          ),
+          _noteField(),
           const SizedBox(height: 10),
-          // ── Photo capture box ─────────────────────────────────────────────
-          PhotoCaptureBox(
-            photos: widget.photos,
-            maxPhotos: widget.maxPhotos,
-            borderColor: kInspFailBorder,
-            accentColor: kInspFailFill,
-            accentBgColor: const Color(0xFFFEE2E2),
-            onPhotosChanged: widget.onPhotosChanged,
-            onCapturePhoto: () async {
-              final selected =
-                  await selectMedia(mediaSource: MediaSource.camera);
-              if (selected != null && selected.isNotEmpty) {
-                return selected.first.bytes;
-              }
-              return null;
-            },
-            emptyLabel: 'Tap to take photo',
-            emptySubtitle: 'Evidence of the issue',
-          ),
-          if (widget.photoRequired && widget.photos.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                'Photo evidence required',
-                style: inspInterStyle(11, FontWeight.w600, kInspFailFill),
-              ),
-            ),
+          _photoBox(),
         ],
       ),
     );
