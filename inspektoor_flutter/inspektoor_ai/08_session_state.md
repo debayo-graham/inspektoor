@@ -31,30 +31,28 @@ Working end-to-end:
   - Inspection form schema manipulation: wrap/unwrap, card builder,
     add/replace/delete/reorder items — all in custom actions
   - In-memory inspection draft: init, step through items, GPS stamp, undo
-  - Inspection execution UI (INSP-01 DONE): InspectionRunnerView renders
-    all item types (single-check, multi-check, multiple-choice, numeric,
-    comment-box, alphanumeric, signature). Photo type still stubbed.
-    UI modernisation complete: custom colour tokens (inspection_tokens.dart),
-    inspInterStyle() text helper, coloured multi-check cards with pass/fail
-    chips, failure note panel with camera-only photo evidence (4:3 aspect
-    ratio, dashed border empty state, full image display), context-aware
-    multi-check footer (grey/blue/amber), "SECTION QUESTION" body label.
-    Per-sub-check photoRequired and maxPhotos (each check object carries its
-    own values, falls back to item-level config for old templates).
-    Tap-to-toggle on sub-check cards (first tap = pass, second = fail).
-    Hard reset of failure notes/photos when toggling back to pass.
-    Title bar shows "INSPECTION" label above asset name.
-    Back navigation guarded against double confirm dialog.
-    Comment-box input with OCR camera (freeText mode, preserves case,
-    collapses newlines), char count ring (amber warning at 90%), maxLength
-    from config (default 500), quick-fill chips. OCR camera icon always
-    allows rescan on all input types.
-    Progress bar directional animation: blue overlay sweeps left-to-right
-    on forward, right-to-left on backward. Multi-check current step shows
-    sub-check pass/fail colors as base layer under blue overlay.
-    Summary screen shown on completion with per-item defect detection,
-    pending submission (INSP-02).
-    File: lib/features/inspection/inspection_runner_view.dart
+  - Inspection execution UI (INSP-01 DONE — 2026-03-11):
+    InspectionRunnerView renders all item types: single-check, multi-check,
+    multiple-choice, numeric, comment-box, alphanumeric, signature, photo.
+    Full feature list:
+      · Custom colour tokens + inspInterStyle() text helper
+      · Multi-check cards with pass/fail chips, failure note panel, multi-photo
+        evidence (PhotoCaptureBox carousel + PhotoPreviewScreen with annotation)
+      · Per-sub-check photoRequired and maxPhotos (per-check object, fallback
+        to item-level config). Tap-to-toggle (first=pass, second=fail).
+      · Comment-box with OCR camera (freeText mode), char count ring, quick-fill
+      · Numeric and alphanumeric inputs with OCR camera (rescan always enabled)
+      · Photo input type: multi-photo capture with preview/annotation
+      · Photo annotation: freehand drawing, bakes strokes on Done (not save),
+        label overlay visual-only (never baked into bytes)
+      · Progress bar: directional blue overlay animation, multi-check base colors
+      · Tablet layout (≥768px): side-by-side summary + step view, no AppBar
+      · Deferred first build + memoized defectMap for fast page load
+      · LoadingOverlay: animated pill card (waveform bars + bouncing dots +
+        blur backdrop), shown pre-navigation for seamless loading UX
+      · Back navigation: PopScope + confirm dialog with re-entrancy guard
+      · Summary screen with per-item defect detection, pending INSP-02
+    Files: lib/features/inspection/*, lib/common/components/*
   - Global error logging: crashes sent to Supabase Edge Function → app_errors
   - Theme and UI system: Inter font, brand blue (#27AAE2), light mode only,
     responsive navigation (bottom bar on phone, vertical sidebar on tablet)

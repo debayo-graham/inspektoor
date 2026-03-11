@@ -162,52 +162,52 @@ File / Photo Attachment
            directly on the assets row — not via the files table.
            No dedicated files listing UI was found.
 
---------------------------------------------------
-PLACEHOLDER ONLY
---------------------------------------------------
-
-Inspection Execution (Inspect Asset)  [INSP-01 DONE — 2026-03-10]
+Inspection Execution (Inspect Asset)  [INSP-01 DONE — 2026-03-11]
   Page:    pages/inspections/inspect_asset/
   View:    lib/features/inspection/inspection_runner_view.dart
-  Detail:  InspectionRunnerView renders the full step-by-step inspection UI.
-           Reads FFAppState.templateJson (form definition) and derives current
-           step from FFAppState.inspectionDraftJson answered items count.
-           Item types rendered: single-check, multi-check, multiple-choice,
-           numeric, comment-box, alphanumeric, signature.
-           Stub in place for: photo (marked for future work).
-           Signature: fully implemented via InspectionSignaturePad (drawing
-           canvas, clear/done, PNG export as Uint8List, base64 cache).
-           UI modernised: custom colour tokens (inspection_tokens.dart),
-           inspInterStyle() text helper, coloured multi-check cards with
-           pass/fail chips, failure note panel with camera-only photo
-           evidence (4:3 aspect ratio display), context-aware multi-check
-           footer (grey/blue/amber), "SECTION QUESTION" body label.
-           Per-sub-check photoRequired and maxPhotos (per-check object,
-           falls back to item-level config for old templates).
-           Tap-to-toggle on sub-check cards (first tap = pass).
-           Hard reset of failure notes/photos on pass toggle.
-           Title bar: "INSPECTION" label above asset name.
-           Back navigation: re-entrancy guard prevents double confirm dialog.
-           Comment-box input (comment_box_input.dart): OCR camera inside
-           textarea, freeText extraction (preserves case, collapses newlines),
-           char count ring with amber warning at 90%, maxLength from config
-           (default 500), quick-fill chips.
-           OCR camera (ocr_camera_screen.dart): custom camera with viewfinder,
-           3 extraction modes (numeric, alphanumeric, freeText),
-           largeViewfinder param for paragraph capture.
-           Progress bar: directional blue overlay (left-to-right forward,
-           right-to-left backward), multi-check base colors under overlay.
-           Wires existing actions: addOrUpdateItemValue, undoLastStep,
-           buildValuesForPassAllSubChecks.
-           Completion screen shown when all items answered; submission
-           placeholder present pending INSP-02.
+  Detail:  Fully implemented step-by-step inspection UI. All item types
+           rendered: single-check, multi-check, multiple-choice, numeric,
+           comment-box, alphanumeric, signature, photo.
+           Features: custom colour tokens, per-sub-check photoRequired/maxPhotos,
+           tap-to-toggle, OCR camera (3 modes), comment-box with char count ring
+           and quick-fill chips, multi-photo capture with annotation (bake on Done),
+           directional progress bar animation, tablet layout (≥768px side-by-side),
+           deferred first build + memoized defectMap, animated LoadingOverlay
+           (waveform bars + bouncing dots + blur backdrop, shown pre-navigation),
+           back navigation with re-entrancy-guarded confirm dialog.
+           Summary screen with per-item defect detection, pending INSP-02.
            No FlutterFlow layer imports — clean Dart only.
-  New files (session 4):
+  Files:
+    lib/features/inspection/inspection_runner_view.dart
+    lib/features/inspection/inspection_session.dart
+    lib/features/inspection/inspection_tokens.dart
+    lib/features/inspection/components/inspection_item_step.dart
+    lib/features/inspection/components/inspection_progress_header.dart
+    lib/features/inspection/components/inspection_summary_view.dart
+    lib/features/inspection/components/pill_button.dart
+    lib/features/inspection/components/item_inputs/option_grid.dart
+    lib/features/inspection/components/item_inputs/multi_check_list.dart
+    lib/features/inspection/components/item_inputs/multi_choice_list.dart
+    lib/features/inspection/components/item_inputs/text_entry.dart
+    lib/features/inspection/components/item_inputs/signature_pad.dart
+    lib/features/inspection/components/item_inputs/stub_notice.dart
     lib/features/inspection/components/item_inputs/comment_box_input.dart
     lib/features/inspection/components/item_inputs/numeric_input.dart
     lib/features/inspection/components/item_inputs/alphanumeric_input.dart
     lib/features/inspection/components/item_inputs/single_check_card.dart
+    lib/features/inspection/components/item_inputs/photo_input.dart
     lib/common/components/ocr_camera_screen.dart
+    lib/common/components/photo_capture_box.dart
+    lib/common/components/photo_preview_screen.dart
+    lib/common/components/dashed_border_painter.dart
+    lib/common/components/confirm_quit_inspection_dialog.dart
+    lib/common/components/loading_overlay.dart
+
+--------------------------------------------------
+PLACEHOLDER ONLY
+--------------------------------------------------
+
+(none currently)
 
 --------------------------------------------------
 NOT STARTED
