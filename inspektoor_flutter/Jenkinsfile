@@ -60,7 +60,11 @@ pipeline {
                     file(credentialsId: 'APP_STORE_CONNECT_API_KEY', variable: 'APP_STORE_CONNECT_API_KEY_PATH'),
                     string(credentialsId: 'APPLE_ID', variable: 'APPLE_ID')
                 ]) {
-                    withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin"]) {
+                    withEnv([
+                        "PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin",
+                        "LANG=en_US.UTF-8",
+                        "LC_ALL=en_US.UTF-8"
+                    ]) {
                         dir('inspektoor_flutter/ios') {
                             sh '/opt/homebrew/opt/ruby/bin/bundle exec fastlane beta'
                         }
