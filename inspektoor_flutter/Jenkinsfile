@@ -13,15 +13,15 @@ pipeline {
             }
         }
 
-       stage('Analyze') {
-    steps {
-        withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
-            dir('inspektoor_flutter') {
-                sh 'flutter analyze --no-fatal-warnings --no-fatal-infos'
+        stage('Analyze') {
+            steps {
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                    dir('inspektoor_flutter') {
+                        sh 'flutter analyze --no-fatal-warnings --no-fatal-infos'
+                    }
+                }
             }
         }
-    }
-}
 
         stage('Test') {
             steps {
@@ -53,11 +53,27 @@ pipeline {
             }
         }
 
+        stage('Deploy to TestFlight') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'MATCH_PASSWORD', variable: 'MATCH_PASSWORD'),
+                    file(credentialsId: 'APP_STORE_CONNECT_API_KEY', variable: 'APP_STORE_CONNECT_API_KEY_PATH'),
+                    string(credentialsId: 'APPLE_ID', variable: 'APPLE_ID')
+                ]) {
+                    withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                        dir('inspektoor_flutter/ios') {
+                            sh 'bundle exec fastlane beta'
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     post {
         success {
-            echo '✅ Build succeeded!'
+            echo '✅ Build and TestFlight deploy succeeded!'
         }
         failure {
             echo '❌ Build failed!'
