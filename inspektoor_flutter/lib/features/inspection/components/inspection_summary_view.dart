@@ -17,6 +17,7 @@ class InspectionSummaryView extends StatelessWidget {
   final Map<int, String> singleCheckValues;
   final Map<String, Map<String, dynamic>> answerCache;
   final Future<void> Function() onBack;
+  final Future<void> Function()? onSubmit;
   final DateTime? startedAt;
   final DateTime? completedAt;
 
@@ -29,6 +30,7 @@ class InspectionSummaryView extends StatelessWidget {
     this.singleCheckValues = const {},
     this.answerCache = const {},
     required this.onBack,
+    this.onSubmit,
     this.startedAt,
     this.completedAt,
   });
@@ -189,29 +191,34 @@ class InspectionSummaryView extends StatelessWidget {
               children: [
                 const Divider(height: 1, thickness: 1, color: kInspBorder),
                 const SizedBox(height: 12),
-                // TODO(INSP-02): Replace with caSubmitInspection once implemented.
                 Container(
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    gradient: onSubmit != null
+                        ? const LinearGradient(
+                            colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                    color: onSubmit == null ? const Color(0xFFCBD5E1) : null,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0EA5E9).withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    boxShadow: onSubmit != null
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF0EA5E9)
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Material(
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
-                      onTap: null, // INSP-02
+                      onTap: onSubmit,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Row(
@@ -227,20 +234,6 @@ class InspectionSummaryView extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: kInspPrimary.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Submission not yet available — INSP-02',
-                    textAlign: TextAlign.center,
-                    style: inspInterStyle(11, FontWeight.w400, kInspPrimary),
                   ),
                 ),
                 const SizedBox(height: 10),
