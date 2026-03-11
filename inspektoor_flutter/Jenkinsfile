@@ -58,7 +58,9 @@ pipeline {
                 withCredentials([
                     string(credentialsId: 'MATCH_PASSWORD', variable: 'MATCH_PASSWORD'),
                     file(credentialsId: 'APP_STORE_CONNECT_API_KEY', variable: 'APP_STORE_CONNECT_API_KEY_PATH'),
-                    string(credentialsId: 'APPLE_ID', variable: 'APPLE_ID')
+                    string(credentialsId: 'APPLE_ID', variable: 'APPLE_ID'),
+                    string(credentialsId: 'APP_STORE_KEY_ID', variable: 'APP_STORE_KEY_ID'),
+                    string(credentialsId: 'APP_STORE_ISSUER_ID', variable: 'APP_STORE_ISSUER_ID')
                 ]) {
                     withEnv([
                         "PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin",
