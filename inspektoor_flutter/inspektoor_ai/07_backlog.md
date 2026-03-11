@@ -4,7 +4,7 @@ Source: gaps identified in 06_module_inventory.md and 05_data_model_map.md
 Scope: complete what exists — no new features, no redesigns
 
 --------------------------------------------------
-MODULE: INSPECTION EXECUTION
+MODULE: INSPECTION EXECUTION 
 --------------------------------------------------
 
 Priority: Critical. The inspection draft infrastructure exists but the
