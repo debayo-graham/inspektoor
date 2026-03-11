@@ -1,48 +1,54 @@
 pipeline {
     agent any
 
-    environment {
-        PATH = "/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:${env.PATH}"
-    }
-
     stages {
 
         stage('Install Dependencies') {
             steps {
-                dir('inspektoor_flutter') {
-                    sh 'flutter pub get'
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                    dir('inspektoor_flutter') {
+                        sh 'flutter pub get'
+                    }
                 }
             }
         }
 
         stage('Analyze') {
             steps {
-                dir('inspektoor_flutter') {
-                    sh 'flutter analyze'
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                    dir('inspektoor_flutter') {
+                        sh 'flutter analyze'
+                    }
                 }
             }
         }
 
         stage('Test') {
             steps {
-                dir('inspektoor_flutter') {
-                    sh 'flutter test'
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                    dir('inspektoor_flutter') {
+                        sh 'flutter test'
+                    }
                 }
             }
         }
 
         stage('Build Android') {
             steps {
-                dir('inspektoor_flutter') {
-                    sh 'flutter build appbundle --release'
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                    dir('inspektoor_flutter') {
+                        sh 'flutter build appbundle --release'
+                    }
                 }
             }
         }
 
         stage('Build iOS') {
             steps {
-                dir('inspektoor_flutter') {
-                    sh 'flutter build ios --release --no-codesign'
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                    dir('inspektoor_flutter') {
+                        sh 'flutter build ios --release --no-codesign'
+                    }
                 }
             }
         }
