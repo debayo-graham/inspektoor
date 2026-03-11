@@ -30,3 +30,4 @@ export 'delete_asset_forms.dart' show deleteAssetForms;
 export 'add_forms_to_asset.dart' show addFormsToAsset;
 export 'trigger_snackbar.dart' show triggerSnackbar;
 export 'delete_all_forms_from_asset.dart' show deleteAllFormsFromAsset;
+export 'ca_submit_inspection.dart' show caSubmitInspection;

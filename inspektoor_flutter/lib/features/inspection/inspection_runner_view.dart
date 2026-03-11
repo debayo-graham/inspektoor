@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '/app_state.dart';
+import '/common/components/loading_overlay.dart';
 import '/custom_code/actions/add_or_update_item_value.dart';
+import '/custom_code/actions/ca_submit_inspection.dart';
 import '/custom_code/actions/undo_last_step.dart';
 import 'inspection_session.dart';
 import 'inspection_tokens.dart';
@@ -134,6 +136,51 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
       draft['completed_at'] = DateTime.now().toUtc().toIso8601String();
       FFAppState().inspectionDraftJson = json.encode(draft);
     } catch (_) {}
+  }
+
+  Future<void> _onSubmitInspection() async {
+    final assetName =
+        InspectionSession.assetName(FFAppState().inspectionDraftJson);
+    LoadingOverlay.show(
+      context,
+      message: 'Submitting inspection…',
+      subtitle: assetName.isNotEmpty ? assetName : null,
+      icon: Icons.cloud_upload_outlined,
+    );
+
+    try {
+      final result = await caSubmitInspection();
+      if (!mounted) return;
+      LoadingOverlay.hide(context);
+
+      final success = result['success'] == true;
+      if (success) {
+        // Clear draft state.
+        FFAppState().update(() {
+          FFAppState().inspectionDraftJson = '';
+          FFAppState().templateJson = '';
+          FFAppState().currentInspectionIndex = 0;
+        });
+        Navigator.of(context).pop();
+      } else {
+        final error = result['error'] as String? ?? 'Submission failed.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: kInspError,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      LoadingOverlay.hide(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error: $e'),
+          backgroundColor: kInspError,
+        ),
+      );
+    }
   }
 
   Future<void> _onBack() async {
@@ -372,6 +419,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
         singleCheckValues: singleCheckValues,
         answerCache: _answerCache,
         onBack: _onBack,
+        onSubmit: _onSubmitInspection,
         startedAt: InspectionSession.startedAt(
             FFAppState().inspectionDraftJson),
         completedAt: InspectionSession.completedAt(
