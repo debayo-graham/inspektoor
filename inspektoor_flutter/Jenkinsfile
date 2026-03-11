@@ -5,7 +5,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin"]) {
                     dir('inspektoor_flutter') {
                         sh 'flutter pub get'
                     }
@@ -15,7 +15,7 @@ pipeline {
 
         stage('Analyze') {
             steps {
-                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin"]) {
                     dir('inspektoor_flutter') {
                         sh 'flutter analyze --no-fatal-warnings --no-fatal-infos'
                     }
@@ -25,7 +25,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin"]) {
                     dir('inspektoor_flutter') {
                         sh 'flutter test'
                     }
@@ -35,7 +35,7 @@ pipeline {
 
         stage('Build Android') {
             steps {
-                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin"]) {
                     dir('inspektoor_flutter') {
                         sh 'flutter build appbundle --release'
                     }
@@ -45,7 +45,7 @@ pipeline {
 
         stage('Build iOS') {
             steps {
-                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin"]) {
                     dir('inspektoor_flutter') {
                         sh 'flutter build ios --release --no-codesign'
                     }
@@ -60,9 +60,9 @@ pipeline {
                     file(credentialsId: 'APP_STORE_CONNECT_API_KEY', variable: 'APP_STORE_CONNECT_API_KEY_PATH'),
                     string(credentialsId: 'APPLE_ID', variable: 'APPLE_ID')
                 ]) {
-                    withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+                    withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin:/opt/homebrew/opt/ruby/bin"]) {
                         dir('inspektoor_flutter/ios') {
-                            sh 'bundle exec fastlane beta'
+                            sh '/opt/homebrew/opt/ruby/bin/bundle exec fastlane beta'
                         }
                     }
                 }
