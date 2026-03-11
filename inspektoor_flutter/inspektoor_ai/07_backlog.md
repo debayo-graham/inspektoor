@@ -467,3 +467,17 @@ NOTIF-06  Display unread notification count on nav tab
   Work: Query count of notifications where user_id = currentUserUid
         and is_read = false. Display as a badge on the bell icon.
   Depends on: NOTIF-02, NOTIF-05
+
+--------------------------------------------------
+MODULE: TECH DEBT / CLEANUP
+--------------------------------------------------
+
+Priority: Low. Tackle incrementally as files are touched for real work.
+
+TECH-01  Fix FlutterFlow-generated analyzer warnings
+  Gap:  ~3000 analyzer warnings and infos from FlutterFlow-generated code
+        (lib/flutter_flow/*, lib/pages/*, lib/backend/*). Now that FlutterFlow
+        is no longer used, these should be cleaned up.
+  Work: Fix warnings file-by-file as each file is touched for feature work.
+        Do not batch-fix in a single PR — keep diffs focused.
+  Depends on: nothing
