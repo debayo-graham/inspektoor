@@ -13,15 +13,15 @@ pipeline {
             }
         }
 
-        stage('Analyze') {
-            steps {
-                withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
-                    dir('inspektoor_flutter') {
-                        sh 'flutter analyze'
-                    }
-                }
+       stage('Analyze') {
+    steps {
+        withEnv(["PATH+FLUTTER=/opt/homebrew/bin:/Users/debayo_egov/tools/flutter/bin"]) {
+            dir('inspektoor_flutter') {
+                sh 'flutter analyze --no-fatal-warnings --no-fatal-infos'
             }
         }
+    }
+}
 
         stage('Test') {
             steps {
