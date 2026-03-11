@@ -480,6 +480,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
           maxPhotos:
               (_cfg['maxPhotos'] as num?)?.toInt().clamp(1, 5) ?? 5,
           isTablet: widget.isTablet,
+          photoLabel: widget.item['label'] as String?,
           onToggle: (val) {
             FocusScope.of(context).unfocus();
             setState(() {
@@ -579,6 +580,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
           itemPhotoRequired: _cfg['photoRequired'] as bool? ?? false,
           itemMaxPhotos: (_cfg['maxPhotos'] as num?)?.toInt().clamp(1, 5) ?? 5,
           isTablet: widget.isTablet,
+          itemLabel: widget.item['label'] as String?,
         ),
       'numeric' => InspectionNumericInput(
           controller: _textCtrl,
@@ -627,6 +629,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
           photos: _photos,
           maxPhotos: (_cfg['maxPhotos'] as num?)?.toInt().clamp(1, 5) ?? 5,
           disabled: _submitting,
+          label: widget.item['label'] as String?,
           onPhotosChanged: (list) {
             setState(() => _photos = list);
             _updateCache();

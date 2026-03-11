@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -31,6 +33,7 @@ class InspectionRunnerView extends StatefulWidget {
 class _InspectionRunnerViewState extends State<InspectionRunnerView> {
   List<Map<String, dynamic>> _items = [];
   bool _loaded = false;
+  bool _ready = false;
   String? _loadError;
 
   // Tracks slide direction: true = forward, false = back.
@@ -56,6 +59,11 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
   void initState() {
     super.initState();
     _parseTemplate();
+    // Defer the first heavy build by one frame so the page transition
+    // animates smoothly instead of freezing.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _ready = true);
+    });
   }
 
   @override
@@ -105,10 +113,27 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
       values,
     );
 
+    final count = _answeredCount();
+    // Stamp completed_at when all items are answered (entering summary).
+    if (count >= _items.length) {
+      _stampCompletedAt();
+    }
     FFAppState().update(() {
-      FFAppState().currentInspectionIndex = _answeredCount();
+      FFAppState().currentInspectionIndex = count;
     });
     if (mounted) setState(() {});
+  }
+
+  /// Write completed_at into the draft JSON.
+  void _stampCompletedAt() {
+    try {
+      final raw = FFAppState().inspectionDraftJson;
+      if (raw.isEmpty) return;
+      final draft = json.decode(raw) as Map<String, dynamic>;
+      if (draft.containsKey('completed_at')) return; // already stamped
+      draft['completed_at'] = DateTime.now().toUtc().toIso8601String();
+      FFAppState().inspectionDraftJson = json.encode(draft);
+    } catch (_) {}
   }
 
   Future<void> _onBack() async {
@@ -329,6 +354,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
     required bool isSummary,
     required Map<int, Map<String, String>> allSubValues,
     required Map<int, String> singleCheckValues,
+    required Map<String, bool> defectMap,
     bool isTablet = false,
   }) {
     if (isSummary) {
@@ -341,11 +367,15 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
         key: const ValueKey('__summary__'),
         templateItems: _items,
         answeredItems: _answeredItemsList(),
-        defectMap: _defectMap(),
+        defectMap: defectMap,
         allSubValues: allSubValues,
         singleCheckValues: singleCheckValues,
         answerCache: _answerCache,
         onBack: _onBack,
+        startedAt: InspectionSession.startedAt(
+            FFAppState().inspectionDraftJson),
+        completedAt: InspectionSession.completedAt(
+            FFAppState().inspectionDraftJson),
       );
     }
     final item = _items[step];
@@ -356,7 +386,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
       step: step,
       total: total,
       templateItems: _items,
-      defectMap: _defectMap(),
+      defectMap: defectMap,
       onSubmit: (values) => _onSubmit(item, values),
       onBack: step > 0 ? _onBack : null,
       initialCache: _answerCache[currentItemKey] ?? const {},
@@ -379,8 +409,17 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
     if (_loadError != null) {
       return _ErrorView(message: _loadError!);
     }
-    if (!_loaded) {
-      return const Center(child: CircularProgressIndicator());
+    if (!_loaded || !_ready) {
+      return const Center(
+        child: SizedBox(
+          width: 50,
+          height: 50,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(kInspPrimary),
+            strokeWidth: 3,
+          ),
+        ),
+      );
     }
 
     final step = _answeredCount();
@@ -388,6 +427,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
     final isSummary = step >= total;
     final allSubValues = _resolveSubValues();
     final singleCheckValues = _resolveSingleCheckValues();
+    final defectMap = _defectMap(); // compute once per build
     final goingForward = _goingForward;
 
     return LayoutBuilder(
@@ -399,6 +439,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
           isSummary: isSummary,
           allSubValues: allSubValues,
           singleCheckValues: singleCheckValues,
+          defectMap: defectMap,
           isTablet: isTablet,
         );
         final childKey = child.key!;
@@ -410,6 +451,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
             isSummary: isSummary,
             allSubValues: allSubValues,
             singleCheckValues: singleCheckValues,
+            defectMap: defectMap,
             goingForward: goingForward,
             child: child,
             childKey: childKey,
@@ -421,6 +463,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
           isSummary: isSummary,
           allSubValues: allSubValues,
           singleCheckValues: singleCheckValues,
+          defectMap: defectMap,
           goingForward: goingForward,
           child: child,
           childKey: childKey,
@@ -437,6 +480,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
     required bool isSummary,
     required Map<int, Map<String, String>> allSubValues,
     required Map<int, String> singleCheckValues,
+    required Map<String, bool> defectMap,
     required bool goingForward,
     required Widget child,
     required Key childKey,
@@ -451,7 +495,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
             assetName: InspectionSession.assetName(
                 FFAppState().inspectionDraftJson),
             templateItems: _items,
-            defectMap: _defectMap(),
+            defectMap: defectMap,
             allSubValues: allSubValues,
             singleCheckValues: singleCheckValues,
             forward: goingForward,
@@ -494,6 +538,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
     required bool isSummary,
     required Map<int, Map<String, String>> allSubValues,
     required Map<int, String> singleCheckValues,
+    required Map<String, bool> defectMap,
     required bool goingForward,
     required Widget child,
     required Key childKey,
@@ -509,7 +554,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
           isSummary: isSummary,
           assetName: assetName,
           templateItems: _items,
-          defectMap: _defectMap(),
+          defectMap: defectMap,
           allSubValues: allSubValues,
           singleCheckValues: singleCheckValues,
           forward: goingForward,
@@ -530,7 +575,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
                 isSummary: isSummary,
                 allSubValues: allSubValues,
                 singleCheckValues: singleCheckValues,
-                defectMap: _defectMap(),
+                defectMap: defectMap,
                 canNextNotifier: _canNextNotifier,
                 handleNextNotifier: _handleNextNotifier,
                 onBack: step > 0 ? _onBack : null,

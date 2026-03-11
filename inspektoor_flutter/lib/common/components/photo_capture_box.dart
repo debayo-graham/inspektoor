@@ -55,6 +55,9 @@ class PhotoCaptureBox extends StatefulWidget {
   /// Subtitle shown in the empty state.
   final String emptySubtitle;
 
+  /// Optional label forwarded to [PhotoPreviewScreen] for text overlay.
+  final String? label;
+
   const PhotoCaptureBox({
     super.key,
     required this.photos,
@@ -66,6 +69,7 @@ class PhotoCaptureBox extends StatefulWidget {
     required this.onCapturePhoto,
     this.emptyLabel = 'Tap to take photo',
     this.emptySubtitle = 'Evidence of the issue',
+    this.label,
   });
 
   @override
@@ -97,6 +101,7 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
           maxPhotos: widget.maxPhotos,
           onCapturePhoto: widget.onCapturePhoto,
           accentColor: widget.accentColor,
+          label: widget.label,
         ),
       ),
     );
@@ -115,6 +120,7 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
           maxPhotos: widget.maxPhotos,
           onCapturePhoto: widget.onCapturePhoto,
           accentColor: widget.accentColor,
+          label: widget.label,
         ),
       ),
     );

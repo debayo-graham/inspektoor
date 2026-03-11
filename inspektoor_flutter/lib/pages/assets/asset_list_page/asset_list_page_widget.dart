@@ -11,6 +11,7 @@ import 'dart:ui';
 import '/backend/supabase/supabase.dart';
 // ignore: unused_import
 import '/custom_code/actions/init_inspection_draft.dart';
+import '/common/components/loading_overlay.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -1499,37 +1500,49 @@ class _AssetListPageWidgetState extends State<AssetListPageWidget>
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
           ),
           onPressed: () async {
-            const assetId = 'ebe929a7-3982-4e58-95b6-bfd50c31f1e6';
-            final links = await SupaFlow.client
-                .from('asset_inspection_templates')
-                .select('inspection_template_id')
-                .eq('asset_id', assetId)
-                .limit(1);
-            if (links.isEmpty || !context.mounted) return;
-            final templateId =
-                links.first['inspection_template_id'] as String;
-            final assetRows = await SupaFlow.client
-                .from('assets')
-                .select('name')
-                .eq('id', assetId)
-                .limit(1);
-            if (!context.mounted) return;
-            final assetName = assetRows.isNotEmpty
-                ? (assetRows.first['name'] as String? ?? '')
-                : '';
-            final rows = await SupaFlow.client
-                .from('inspection_templates')
-                .select('schema')
-                .eq('id', templateId)
-                .limit(1);
-            if (rows.isEmpty || !context.mounted) return;
-            FFAppState().update(() {
-              FFAppState().templateJson =
-                  jsonEncode(rows.first['schema']);
-            });
-            await initInspectionDraft(assetId, templateId, assetName);
-            if (context.mounted) {
-              context.pushNamed('InspectAsset');
+            LoadingOverlay.show(context,
+                message: 'Preparing inspection…',
+                icon: Icons.assignment_outlined);
+
+            try {
+              const assetId = 'ebe929a7-3982-4e58-95b6-bfd50c31f1e6';
+              final links = await SupaFlow.client
+                  .from('asset_inspection_templates')
+                  .select('inspection_template_id')
+                  .eq('asset_id', assetId)
+                  .limit(1);
+              if (links.isEmpty || !context.mounted) {
+                if (context.mounted) LoadingOverlay.hide(context);
+                return;
+              }
+              final templateId =
+                  links.first['inspection_template_id'] as String;
+              final assetRows = await SupaFlow.client
+                  .from('assets')
+                  .select('name')
+                  .eq('id', assetId)
+                  .limit(1);
+              if (!context.mounted) return;
+              final assetName = assetRows.isNotEmpty
+                  ? (assetRows.first['name'] as String? ?? '')
+                  : '';
+              final rows = await SupaFlow.client
+                  .from('inspection_templates')
+                  .select('schema')
+                  .eq('id', templateId)
+                  .limit(1);
+              if (rows.isEmpty || !context.mounted) return;
+              FFAppState().update(() {
+                FFAppState().templateJson =
+                    jsonEncode(rows.first['schema']);
+              });
+              await initInspectionDraft(assetId, templateId, assetName);
+              if (context.mounted) {
+                LoadingOverlay.hide(context);
+                context.pushNamed('InspectAsset');
+              }
+            } catch (_) {
+              if (context.mounted) LoadingOverlay.hide(context);
             }
           },
         ),

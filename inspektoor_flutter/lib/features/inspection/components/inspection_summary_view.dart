@@ -17,6 +17,8 @@ class InspectionSummaryView extends StatelessWidget {
   final Map<int, String> singleCheckValues;
   final Map<String, Map<String, dynamic>> answerCache;
   final Future<void> Function() onBack;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
 
   const InspectionSummaryView({
     super.key,
@@ -27,6 +29,8 @@ class InspectionSummaryView extends StatelessWidget {
     this.singleCheckValues = const {},
     this.answerCache = const {},
     required this.onBack,
+    this.startedAt,
+    this.completedAt,
   });
 
   Map<String, dynamic>? _answeredFor(String key) {
@@ -82,6 +86,8 @@ class InspectionSummaryView extends StatelessWidget {
                   passCount: passCount,
                   defectCount: defectCount,
                   passRate: passRate,
+                  startedAt: startedAt,
+                  completedAt: completedAt,
                 ),
                 const SizedBox(height: 12),
 
@@ -277,16 +283,33 @@ class _VerdictCard extends StatelessWidget {
   final int passCount;
   final int defectCount;
   final int passRate;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
 
   const _VerdictCard({
     required this.total,
     required this.passCount,
     required this.defectCount,
     required this.passRate,
+    this.startedAt,
+    this.completedAt,
   });
+
+  static String _formatDuration(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    if (h > 0) return '${h}h ${m}m';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final duration = startedAt != null && completedAt != null
+        ? completedAt!.difference(startedAt!)
+        : null;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -297,9 +320,39 @@ class _VerdictCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Inspection Summary',
-            style: inspInterStyle(18, FontWeight.w700, kInspPrimaryText),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Inspection Summary',
+                  style: inspInterStyle(18, FontWeight.w700, kInspPrimaryText),
+                ),
+              ),
+              if (duration != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F9FF),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: const Color(0xFFBAE6FD), width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.timer_outlined,
+                          size: 14, color: Color(0xFF0284C7)),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatDuration(duration),
+                        style: inspInterStyle(
+                            12, FontWeight.w600, const Color(0xFF0284C7)),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 12),
           // Stats row

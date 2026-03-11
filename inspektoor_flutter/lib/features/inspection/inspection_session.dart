@@ -61,6 +61,28 @@ class InspectionSession {
     return '';
   }
 
+  /// Returns the started_at timestamp from the draft JSON, or null.
+  static DateTime? startedAt(String draftRaw) {
+    if (draftRaw.isEmpty) return null;
+    try {
+      final draft = json.decode(draftRaw);
+      final s = draft['started_at'] as String?;
+      if (s != null) return DateTime.tryParse(s);
+    } catch (_) {}
+    return null;
+  }
+
+  /// Returns the completed_at timestamp from the draft JSON, or null.
+  static DateTime? completedAt(String draftRaw) {
+    if (draftRaw.isEmpty) return null;
+    try {
+      final draft = json.decode(draftRaw);
+      final s = draft['completed_at'] as String?;
+      if (s != null) return DateTime.tryParse(s);
+    } catch (_) {}
+    return null;
+  }
+
   /// Returns the number of answered items in the draft JSON.
   static int answeredCount(String draftRaw) {
     if (draftRaw.isEmpty) return 0;

@@ -23,6 +23,7 @@ class InspectionSingleCheckCard extends StatelessWidget {
   final bool photoRequired;
   final int maxPhotos;
   final bool isTablet;
+  final String? photoLabel;
 
   const InspectionSingleCheckCard({
     super.key,
@@ -36,6 +37,7 @@ class InspectionSingleCheckCard extends StatelessWidget {
     this.photoRequired = false,
     this.maxPhotos = 5,
     this.isTablet = false,
+    this.photoLabel,
   });
 
   Widget _passButton() => _ChoiceButton(
@@ -93,6 +95,7 @@ class InspectionSingleCheckCard extends StatelessWidget {
             photoRequired: photoRequired,
             maxPhotos: maxPhotos,
             isTablet: isTablet,
+            photoLabel: photoLabel,
           ),
         ],
       );
@@ -351,6 +354,7 @@ class _FailureEvidencePanel extends StatefulWidget {
   final bool photoRequired;
   final int maxPhotos;
   final bool isTablet;
+  final String? photoLabel;
 
   const _FailureEvidencePanel({
     required this.note,
@@ -360,6 +364,7 @@ class _FailureEvidencePanel extends StatefulWidget {
     this.photoRequired = false,
     this.maxPhotos = 5,
     this.isTablet = false,
+    this.photoLabel,
   });
 
   @override
@@ -430,6 +435,7 @@ class _FailureEvidencePanelState extends State<_FailureEvidencePanel> {
         },
         emptyLabel: 'Tap to take photo',
         emptySubtitle: 'Evidence of the issue',
+        label: widget.photoLabel,
       );
 
   @override

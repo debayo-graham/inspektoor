@@ -18,6 +18,7 @@ class InspectionPhotoInput extends StatelessWidget {
   final void Function(List<Uint8List>) onPhotosChanged;
   final Future<Uint8List?> Function() onCapturePhoto;
   final bool isTablet;
+  final String? label;
 
   const InspectionPhotoInput({
     super.key,
@@ -27,6 +28,7 @@ class InspectionPhotoInput extends StatelessWidget {
     required this.onPhotosChanged,
     required this.onCapturePhoto,
     this.isTablet = false,
+    this.label,
   });
 
   @override
@@ -47,6 +49,7 @@ class InspectionPhotoInput extends StatelessWidget {
           onCapturePhoto: onCapturePhoto,
           emptyLabel: 'Tap to take photo',
           emptySubtitle: 'Capture photo evidence',
+          label: label,
         ),
 
         // ── Status hint ─────────────────────────────────────────────────────

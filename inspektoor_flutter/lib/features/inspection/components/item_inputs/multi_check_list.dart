@@ -22,6 +22,7 @@ class InspectionMultiCheckList extends StatelessWidget {
   final bool itemPhotoRequired;
   final int itemMaxPhotos;
   final bool isTablet;
+  final String? itemLabel;
 
   const InspectionMultiCheckList({
     super.key,
@@ -37,6 +38,7 @@ class InspectionMultiCheckList extends StatelessWidget {
     this.itemPhotoRequired = false,
     this.itemMaxPhotos = 5,
     this.isTablet = false,
+    this.itemLabel,
   });
 
   bool get _allAnswered => checks.isNotEmpty &&
@@ -64,6 +66,7 @@ class InspectionMultiCheckList extends StatelessWidget {
       photoRequired: checkPhotoReq,
       maxPhotos: checkMaxPhotos,
       isTablet: isTablet,
+      photoLabel: itemLabel,
     );
   }
 
@@ -158,6 +161,7 @@ class _MultiCheckCard extends StatelessWidget {
   final bool photoRequired;
   final int maxPhotos;
   final bool isTablet;
+  final String? photoLabel;
 
   const _MultiCheckCard({
     required this.id,
@@ -172,6 +176,7 @@ class _MultiCheckCard extends StatelessWidget {
     this.photoRequired = false,
     this.maxPhotos = 5,
     this.isTablet = false,
+    this.photoLabel,
   });
 
   Color get _bg =>
@@ -253,6 +258,7 @@ class _MultiCheckCard extends StatelessWidget {
               photoRequired: photoRequired,
               maxPhotos: maxPhotos,
               isTablet: isTablet,
+              photoLabel: photoLabel,
             ),
           ],
         ],
@@ -386,6 +392,7 @@ class _FailureNotePanel extends StatefulWidget {
   final bool photoRequired;
   final int maxPhotos;
   final bool isTablet;
+  final String? photoLabel;
 
   const _FailureNotePanel({
     required this.note,
@@ -395,6 +402,7 @@ class _FailureNotePanel extends StatefulWidget {
     this.photoRequired = false,
     this.maxPhotos = 5,
     this.isTablet = false,
+    this.photoLabel,
   });
 
   @override
@@ -463,6 +471,7 @@ class _FailureNotePanelState extends State<_FailureNotePanel> {
         },
         emptyLabel: 'Tap to take photo',
         emptySubtitle: 'Evidence of the issue',
+        label: widget.photoLabel,
       );
 
   @override
