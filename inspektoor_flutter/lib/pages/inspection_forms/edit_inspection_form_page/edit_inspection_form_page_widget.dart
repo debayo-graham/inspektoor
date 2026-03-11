@@ -6,6 +6,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/form_field_controller.dart';
 import '/pages/components/card_editor_sheet/card_editor_sheet_widget.dart';
+import '/features/inspection_form/inspection_item_types.dart';
 import '/pages/components/custom_confirm_dialog/custom_confirm_dialog_widget.dart';
 import '/pages/components/snackbar/snackbar_widget.dart';
 import 'dart:async';
@@ -815,11 +816,7 @@ class _EditInspectionFormPageWidgetState
                                         controller: _model
                                                 .cardTypeValueController ??=
                                             FormFieldController<String>(null),
-                                        options: [
-                                          'Multi Check',
-                                          'Option 2',
-                                          'Option 3'
-                                        ],
+                                        options: kItemTypeLabels,
                                         onChanged: (val) async {
                                           safeSetState(
                                               () => _model.cardTypeValue = val);
@@ -1042,7 +1039,7 @@ class _EditInspectionFormPageWidgetState
                                                               CardEditorSheetWidget(
                                                             mode: FFAppConstants
                                                                 .CREATEMODE,
-                                                            type: 'multi-check',
+                                                            type: typeFromLabel(_model.cardTypeValue),
                                                             index: _model
                                                                 .inspectionFormItems
                                                                 .length,
@@ -1736,6 +1733,37 @@ class _EditInspectionFormPageWidgetState
                                                     ),
                                                     Padding(
                                                       padding:
+                                                          const EdgeInsetsDirectional
+                                                              .fromSTEB(
+                                                                  0.0,
+                                                                  6.0,
+                                                                  0.0,
+                                                                  0.0),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.symmetric(
+                                                            horizontal: 8, vertical: 3),
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(0xFFF1F5F9),
+                                                          borderRadius:
+                                                              BorderRadius.circular(6),
+                                                        ),
+                                                        child: Text(
+                                                          labelFromType(
+                                                            getJsonField(
+                                                              listViewInspectionFormItemsItem,
+                                                              r'''$.type''',
+                                                            )?.toString(),
+                                                          ),
+                                                          style: GoogleFonts.inter(
+                                                            fontSize: 11,
+                                                            fontWeight: FontWeight.w500,
+                                                            color: const Color(0xFF64748B),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding:
                                                           EdgeInsetsDirectional
                                                               .fromSTEB(
                                                                   0.0,
@@ -1785,10 +1813,10 @@ class _EditInspectionFormPageWidgetState
                                                     Builder(
                                                       builder: (context) {
                                                         final optionItems =
-                                                            getJsonField(
+                                                            (getJsonField(
                                                           listViewInspectionFormItemsItem,
                                                           r'''$.config.checks''',
-                                                        ).toList();
+                                                        ) as List? ?? []).toList();
 
                                                         return ListView.builder(
                                                           padding:

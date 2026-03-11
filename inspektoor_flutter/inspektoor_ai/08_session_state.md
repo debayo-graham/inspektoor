@@ -1,5 +1,5 @@
 Session State
-Last updated: 2026-02-28
+Last updated: 2026-03-11
 
 --------------------------------------------------
 What the system currently is
@@ -31,6 +31,28 @@ Working end-to-end:
   - Inspection form schema manipulation: wrap/unwrap, card builder,
     add/replace/delete/reorder items — all in custom actions
   - In-memory inspection draft: init, step through items, GPS stamp, undo
+  - Inspection execution UI (INSP-01 DONE — 2026-03-11):
+    InspectionRunnerView renders all item types: single-check, multi-check,
+    multiple-choice, numeric, comment-box, alphanumeric, signature, photo.
+    Full feature list:
+      · Custom colour tokens + inspInterStyle() text helper
+      · Multi-check cards with pass/fail chips, failure note panel, multi-photo
+        evidence (PhotoCaptureBox carousel + PhotoPreviewScreen with annotation)
+      · Per-sub-check photoRequired and maxPhotos (per-check object, fallback
+        to item-level config). Tap-to-toggle (first=pass, second=fail).
+      · Comment-box with OCR camera (freeText mode), char count ring, quick-fill
+      · Numeric and alphanumeric inputs with OCR camera (rescan always enabled)
+      · Photo input type: multi-photo capture with preview/annotation
+      · Photo annotation: freehand drawing, bakes strokes on Done (not save),
+        label overlay visual-only (never baked into bytes)
+      · Progress bar: directional blue overlay animation, multi-check base colors
+      · Tablet layout (≥768px): side-by-side summary + step view, no AppBar
+      · Deferred first build + memoized defectMap for fast page load
+      · LoadingOverlay: animated pill card (waveform bars + bouncing dots +
+        blur backdrop), shown pre-navigation for seamless loading UX
+      · Back navigation: PopScope + confirm dialog with re-entrancy guard
+      · Summary screen with per-item defect detection, pending INSP-02
+    Files: lib/features/inspection/*, lib/common/components/*
   - Global error logging: crashes sent to Supabase Edge Function → app_errors
   - Theme and UI system: Inter font, brand blue (#27AAE2), light mode only,
     responsive navigation (bottom bar on phone, vertical sidebar on tablet)
@@ -48,12 +70,11 @@ What should be worked on next
 --------------------------------------------------
 
 1. Inspection execution  [highest priority]
-   The inspect_asset page is an empty placeholder ("Page Title", no body).
-   All supporting custom actions are already built. The next step is:
-     a. Build the page UI to render items from the template schema
-     b. Write caSubmitInspection to persist the draft to inspections,
+   INSP-01 (page UI) is DONE as of 2026-03-10. Next steps:
+     a. INSP-02: Write caSubmitInspection to persist the draft to inspections,
         inspection_items, and inspection_item_values
-     c. Update asset.last_inspected_at on submit
+     b. INSP-03: Wire submission action into the summary view
+     c. INSP-04: Update asset.last_inspected_at on submit
 
 2. Verify and close partially-built flows
    Before building new modules, confirm:

@@ -10,17 +10,149 @@ MODULE: INSPECTION EXECUTION
 Priority: Critical. The inspection draft infrastructure exists but the
 execution page is an empty placeholder. Nothing in this module works end-to-end.
 
-INSP-01  Build inspect_asset page UI
-  File: lib/pages/inspections/inspect_asset/inspect_asset_widget.dart
-  Gap:  Page body is empty (no children in Column). Title is literal "Page Title".
-  Work: Replace the empty body with the step-by-step inspection UI that renders
-        items from FFAppState.templateJson. Wire existing custom actions:
-          - initInspectionDraft (already implemented)
-          - addOrUpdateItemValue (already implemented)
-          - undoLastStep (already implemented)
-          - updateInspectionDraftGPS (already implemented)
-          - buildValuesForPassAllSubChecks (already implemented)
-        The actions are complete — only the page widget is missing.
+INSP-01  Build inspect_asset page UI  [DONE — 2026-03-11]
+  Files built (all clean Dart, no FlutterFlow imports):
+    lib/features/inspection/inspection_runner_view.dart
+    lib/features/inspection/inspection_session.dart
+    lib/features/inspection/inspection_tokens.dart
+    lib/features/inspection/components/inspection_item_step.dart
+    lib/features/inspection/components/inspection_progress_header.dart
+    lib/features/inspection/components/inspection_summary_view.dart
+    lib/features/inspection/components/pill_button.dart
+    lib/features/inspection/components/item_inputs/option_grid.dart
+    lib/features/inspection/components/item_inputs/multi_check_list.dart
+    lib/features/inspection/components/item_inputs/multi_choice_list.dart
+    lib/features/inspection/components/item_inputs/text_entry.dart
+    lib/features/inspection/components/item_inputs/signature_pad.dart
+    lib/features/inspection/components/item_inputs/stub_notice.dart
+    lib/features/inspection/components/item_inputs/comment_box_input.dart
+    lib/features/inspection/components/item_inputs/numeric_input.dart
+    lib/features/inspection/components/item_inputs/alphanumeric_input.dart
+    lib/features/inspection/components/item_inputs/single_check_card.dart
+    lib/features/inspection/components/item_inputs/photo_input.dart
+    lib/common/components/ocr_camera_screen.dart
+    lib/common/components/photo_capture_box.dart
+    lib/common/components/photo_preview_screen.dart
+    lib/common/components/dashed_border_painter.dart
+    lib/common/components/confirm_quit_inspection_dialog.dart
+    lib/common/components/loading_overlay.dart
+
+  Work done:
+    InspectionRunnerView (orchestrator)
+      - Reads FFAppState.templateJson and inspectionDraftJson.
+      - Derives current step from answered item count.
+      - AnimatedSwitcher with directional slide transitions (forward/back).
+      - Per-item answer cache: selections survive back-navigation.
+      - Wires addOrUpdateItemValue, undoLastStep, buildValuesForPassAllSubChecks.
+      - Routes to InspectionSummaryView when all items answered.
+      - Deferred first build (_ready flag + addPostFrameCallback) for snappy page open.
+      - Memoized _defectMap() — computed once per build, passed to child builders.
+      - Tablet layout: LayoutBuilder ≥768px → side-by-side summary + step view.
+
+    InspectionSession (pure Dart, no Flutter dependency)
+      - parseTemplate: parses and order-sorts template items from JSON.
+      - answeredCount / answeredItems / defectMap: query the draft JSON.
+      - needsNextButton: type policy (tap-to-submit vs Next button).
+      - buildValues / unsetMultiCheckCount: value assembly and validation.
+      - assetName: extracts asset name from draft JSON.
+
+    InspectionItemStep (per-step StatefulWidget)
+      - Renders correct input widget by item type via switch expression.
+      - Types fully implemented:
+          single-check       → SingleCheckCard (tap-to-submit)
+          multiple-choice    → InspectionOptionGrid (single) or
+                               InspectionMultiChoiceList (allowMultiple=true)
+          multi-check        → InspectionMultiCheckList with Pass All shortcut;
+                               validates all sub-checks answered before submit
+          numeric            → NumericInput (decimal keyboard, unit suffix, OCR)
+          comment-box        → CommentBoxInput (multiline, maxLength, OCR, quick-fill)
+          alphanumeric       → AlphanumericInput (OCR)
+          signature          → InspectionSignaturePad (fully implemented)
+          photo              → PhotoInput (multi-photo capture with preview)
+          unknown            → InspectionStubNotice
+      - Footer: Previous / Next pill buttons; layout adapts to which are needed.
+      - Signature: Next enabled only after a stroke is captured.
+      - Multi-check: snackbar shown if any sub-checks unset on Next.
+
+    InspectionSignaturePad (fully implemented — not a stub)
+      - Drawing canvas via `signature` package (SignatureController).
+      - Clear and Done buttons; Done disabled until at least one stroke drawn.
+      - Exports PNG as Uint8List via onCapture callback.
+      - Value stored as base64 string in answer cache; survives back-navigation.
+
+    InspectionProgressHeader + InspectionSegmentBar
+      - Segmented progress bar: each segment coloured pass/fail/current/pending.
+      - Step label and item label displayed below the bar.
+      - Directional animation: blue overlay sweeps left-to-right on forward,
+        right-to-left on backward. Multi-check base colors under overlay.
+
+    InspectionSummaryView
+      - Shown when step == total (all items answered).
+      - Stat chips: Passed / Defects / Total counts.
+      - Per-item list with pass/fail/unanswered indicators.
+      - Submit Inspection button present but disabled with INSP-02 placeholder notice.
+
+    PhotoCaptureBox (reusable multi-photo widget)
+      - Empty state: dashed border, camera icon, label + subtitle.
+      - Has-photos state: PageView carousel with pagination dots, counter badge,
+        add button, delete overlay.
+      - No FlutterFlow imports — camera capture injected via callback.
+
+    PhotoPreviewScreen (full-screen photo review)
+      - Add/delete/reorder photos with thumbnails.
+      - Annotation mode: freehand drawing with undo/clear, bakes strokes on Done
+        (not on save — save is instant).
+      - Label overlay (visual only, never baked into bytes).
+      - Deleting last photo does NOT auto-close the screen.
+
+    LoadingOverlay (reusable animated overlay)
+      - Animated pill card: waveform bars (left) + message/subtitle (center)
+        + optional icon (right).
+      - Waveform: 4 bars with staggered sine-wave height animation (1.8s loop).
+      - Bouncing dots: 3 grey dots with staggered scale/opacity (2s loop).
+      - Backdrop: dark scrim with 4px blur (BackdropFilter).
+      - Entry animation: scale from 85% + fade in (400ms easeOutBack).
+      - API: LoadingOverlay.show(context, message:, subtitle:, icon:) / .hide(context).
+      - Used pre-navigation on asset list page for seamless inspection load.
+
+    inspect_asset_widget.dart
+      - Title bar: "INSPECTION" label above asset name.
+      - Body: InspectionRunnerView with onInteracted callback.
+      - Back navigation: PopScope + confirm dialog with re-entrancy guard.
+      - Tablet: hides AppBar when ≥768px (runner has its own header).
+
+  UI Modernisation:
+    inspection_tokens.dart
+      - Colour tokens: kInspPassBg/Border/Fill, kInspFailBg/Border/Fill,
+        kInspWarningBg/Border/Warning, kInspSlate, kInspBorder, kInspCard,
+        kInspPrimary, kInspPrimaryText, kInspSecText.
+      - inspInterStyle(size, weight, color) helper — all new text uses this.
+
+  Per-sub-check photoRequired:
+    - Each check object carries photoRequired (bool) and maxPhotos (int 1-5).
+    - Falls back to item-level config for old templates.
+    - Card editor: per-check config row (camera icon + switch + max dropdown).
+    - Tap-to-toggle on sub-check cards (first tap = pass, second = fail).
+    - Hard reset of failure notes/photos when toggling back to pass.
+
+  Comment-box input + OCR:
+    - Rich textarea with char count ring (amber warning at 90%), quick-fill chips.
+    - OCR camera: custom viewfinder, 3 extraction modes (numeric, alphanumeric, freeText).
+    - Camera icon stays tappable for rescan on all input types.
+
+INSP-01b  Comment-box "Quick Fill" from previous inspections
+  Gap:  The comment-box input has hardcoded quick-fill chips
+        ("No issues noted", "Minor wear observed", etc.). These should
+        pull from the user's previous inspection comment values for the
+        same template item, so frequently-used comments are one tap away.
+  Work: After INSP-02 (submission) is implemented and inspection history
+        exists in the database:
+          1. Query the most recent N (e.g. 5) distinct comment values
+             for the same template_item_key from previous inspections.
+          2. Pass them as the `quickFills` parameter to
+             InspectionCommentBoxInput.
+          3. Fall back to the hardcoded defaults when no history exists.
+  Depends on: INSP-02
 
 INSP-02  Implement inspection submission action
   Gap:  No action submits FFAppState.inspectionDraftJson to the database.

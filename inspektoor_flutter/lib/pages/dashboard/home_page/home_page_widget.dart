@@ -53,6 +53,11 @@ class _HomePageWidgetState extends State<HomePageWidget> {
         _model.appUserRow?.firstOrNull?.firstName,
         'No Name',
       );
+      FFAppState().fullName = valueOrDefault<String>(
+        _model.appUserRow?.firstOrNull?.fullName ??
+            _model.appUserRow?.firstOrNull?.firstName,
+        'No Name',
+      );
       FFAppState().update(() {});
     });
 

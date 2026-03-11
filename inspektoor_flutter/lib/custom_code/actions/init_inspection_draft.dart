@@ -13,11 +13,13 @@ import 'dart:convert';
 Future initInspectionDraft(
   String assetId,
   String templateId,
+  String assetName,
 ) async {
   final notUtc = DateTime.now().toUtc().toIso8601String();
 
   final draft = {
     "asset_id": assetId,
+    "asset_name": assetName,
     "template_id": templateId,
     "started_at": notUtc,
     "gps": null,

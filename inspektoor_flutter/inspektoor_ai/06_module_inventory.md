@@ -162,18 +162,52 @@ File / Photo Attachment
            directly on the assets row — not via the files table.
            No dedicated files listing UI was found.
 
+Inspection Execution (Inspect Asset)  [INSP-01 DONE — 2026-03-11]
+  Page:    pages/inspections/inspect_asset/
+  View:    lib/features/inspection/inspection_runner_view.dart
+  Detail:  Fully implemented step-by-step inspection UI. All item types
+           rendered: single-check, multi-check, multiple-choice, numeric,
+           comment-box, alphanumeric, signature, photo.
+           Features: custom colour tokens, per-sub-check photoRequired/maxPhotos,
+           tap-to-toggle, OCR camera (3 modes), comment-box with char count ring
+           and quick-fill chips, multi-photo capture with annotation (bake on Done),
+           directional progress bar animation, tablet layout (≥768px side-by-side),
+           deferred first build + memoized defectMap, animated LoadingOverlay
+           (waveform bars + bouncing dots + blur backdrop, shown pre-navigation),
+           back navigation with re-entrancy-guarded confirm dialog.
+           Summary screen with per-item defect detection, pending INSP-02.
+           No FlutterFlow layer imports — clean Dart only.
+  Files:
+    lib/features/inspection/inspection_runner_view.dart
+    lib/features/inspection/inspection_session.dart
+    lib/features/inspection/inspection_tokens.dart
+    lib/features/inspection/components/inspection_item_step.dart
+    lib/features/inspection/components/inspection_progress_header.dart
+    lib/features/inspection/components/inspection_summary_view.dart
+    lib/features/inspection/components/pill_button.dart
+    lib/features/inspection/components/item_inputs/option_grid.dart
+    lib/features/inspection/components/item_inputs/multi_check_list.dart
+    lib/features/inspection/components/item_inputs/multi_choice_list.dart
+    lib/features/inspection/components/item_inputs/text_entry.dart
+    lib/features/inspection/components/item_inputs/signature_pad.dart
+    lib/features/inspection/components/item_inputs/stub_notice.dart
+    lib/features/inspection/components/item_inputs/comment_box_input.dart
+    lib/features/inspection/components/item_inputs/numeric_input.dart
+    lib/features/inspection/components/item_inputs/alphanumeric_input.dart
+    lib/features/inspection/components/item_inputs/single_check_card.dart
+    lib/features/inspection/components/item_inputs/photo_input.dart
+    lib/common/components/ocr_camera_screen.dart
+    lib/common/components/photo_capture_box.dart
+    lib/common/components/photo_preview_screen.dart
+    lib/common/components/dashed_border_painter.dart
+    lib/common/components/confirm_quit_inspection_dialog.dart
+    lib/common/components/loading_overlay.dart
+
 --------------------------------------------------
 PLACEHOLDER ONLY
 --------------------------------------------------
 
-Inspection Execution (Inspect Asset)
-  Page:    pages/inspections/inspect_asset/
-  Detail:  The page renders a scaffold with title text "Page Title" (literal
-           string, not a variable) and an empty body Column (no children).
-           No data queries, no form rendering, no submission logic.
-           The in-memory draft infrastructure (actions) is built but cannot
-           be used until this page is implemented.
-           The inspect_asset route exists in the nav but leads to an empty screen.
+(none currently)
 
 --------------------------------------------------
 NOT STARTED
