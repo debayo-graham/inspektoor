@@ -1,4 +1,4 @@
-git_url("https://github.com/debayo-graham/inspektoor-certificates-ios")
+git_url("git@github.com:debayo-graham/inspektoor-certificates-ios.git")
 
 storage_mode("git")
 
