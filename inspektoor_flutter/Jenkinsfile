@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    environment {
+        PATH = "/opt/homebrew/bin:/Users/${env.USER}/flutter/bin:${env.PATH}"
+    }
+
+    stages {
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'flutter pub get'
+            }
+        }
+
+        stage('Analyze') {
+            steps {
+                sh 'flutter analyze'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'flutter test'
+            }
+        }
+
+        stage('Build Android') {
+            steps {
+                sh 'flutter build appbundle --release'
+            }
+        }
+
+        stage('Build iOS') {
+            steps {
+                sh 'flutter build ios --release --no-codesign'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build succeeded!'
+        }
+        failure {
+            echo '❌ Build failed!'
+        }
+    }
+}
