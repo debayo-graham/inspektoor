@@ -694,18 +694,20 @@ class _TabletHeader extends StatelessWidget {
             width: 250,
             child: Row(
               children: [
-                InkWell(
+                GestureDetector(
                   onTap: onBack,
-                  borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: kInspBorder),
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF1F5F9),
+                      shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        size: 18, color: kInspPrimaryText),
+                    child: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: Color(0xFF475569),
+                      size: 28,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),

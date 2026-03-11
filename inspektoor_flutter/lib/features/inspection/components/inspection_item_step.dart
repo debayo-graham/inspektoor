@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 
 import '../inspection_session.dart';
 import '../inspection_tokens.dart';
-import 'pill_button.dart';
 import 'item_inputs/option_grid.dart';
 import 'item_inputs/single_check_card.dart';
 import 'item_inputs/multi_check_list.dart';
@@ -735,49 +734,93 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
 
     if (!hasBack && !hasNext) return const SizedBox.shrink();
 
+    final ready = _canNext;
+    final continueLabel = _submitting
+        ? 'Saving…'
+        : ready
+            ? 'Continue to Next Step →'
+            : 'Answer to continue';
+    final VoidCallback? onNext = (_submitting || !ready) ? null : _handleNext;
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
-      child: hasBack && hasNext
-          ? Row(
-              children: [
-                Expanded(
-                  child: InspectionPillButton(
-                    label: 'Previous',
-                    leadingIcon: Icons.arrow_back_rounded,
-                    onTap: _submitting ? null : () => widget.onBack!(),
-                    outlined: true,
+      child: Column(
+        children: [
+          const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (hasBack) ...[
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: kInspSlate,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: kInspBorder, width: 1.5),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: kInspPrimaryText,
+                    ),
+                    onPressed:
+                        _submitting ? null : () => widget.onBack!(),
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: InspectionPillButton(
-                    label: _submitting ? 'Saving…' : 'Next',
-                    trailingIcon: Icons.arrow_forward_rounded,
-                    onTap: (_submitting || !_canNext) ? null : _handleNext,
-                    outlined: false,
-                  ),
-                ),
               ],
-            )
-          : hasNext
-              ? Center(
-                  child: FractionallySizedBox(
-                    widthFactor: 0.5,
-                    child: InspectionPillButton(
-                      label: _submitting ? 'Saving…' : 'Next',
-                      trailingIcon: Icons.arrow_forward_rounded,
-                      onTap: (_submitting || !_canNext) ? null : _handleNext,
-                      outlined: false,
-                    ),
-                  ),
-                )
-              : InspectionPillButton(
-                  label: 'Previous',
-                  leadingIcon: Icons.arrow_back_rounded,
-                  onTap: _submitting ? null : () => widget.onBack!(),
-                  outlined: true,
-                ),
+              Expanded(
+                child: hasNext
+                    ? GestureDetector(
+                        onTap: onNext,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: ready ? null : kInspBorder,
+                            gradient: ready
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFF0EA5E9),
+                                      Color(0xFF0284C7),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: ready
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF0EA5E9)
+                                          .withValues(alpha: 0.35),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            continueLabel,
+                            style: inspInterStyle(
+                              15,
+                              FontWeight.w700,
+                              onNext != null
+                                  ? Colors.white
+                                  : const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -1419,7 +1462,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
       );
       bgColor = const Color(0xFF0EA5E9);
       glowColor = const Color(0xFF0EA5E9);
-      label = 'Continue →';
+      label = 'Continue to Next Step →';
       onTap = _submitting ? null : _handleNext;
     } else if (anyFailed) {
       gradient = null;

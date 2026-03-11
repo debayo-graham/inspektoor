@@ -101,20 +101,19 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
                       title: Row(
                         mainAxisSize: MainAxisSize.max,
                         children: [
-                          InkWell(
-                            splashColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
+                          GestureDetector(
                             onTap: _handleBackTap,
                             child: Container(
-                              width: 24.0,
-                              height: 24.0,
-                              decoration: const BoxDecoration(),
-                              child: Icon(
-                                FFIcons.kchevronLeft,
-                                color: FlutterFlowTheme.of(context).primary,
-                                size: 24.0,
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF1F5F9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.chevron_left_rounded,
+                                color: Color(0xFF475569),
+                                size: 28,
                               ),
                             ),
                           ),
