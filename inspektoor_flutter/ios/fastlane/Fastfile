@@ -27,10 +27,23 @@ platform :ios do
       readonly: is_ci
     )
 
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Runner.xcodeproj",
+      team_id: "MTXNW7H675",
+      code_sign_identity: "iPhone Distribution",
+      profile_name: "match AppStore com.inspektoor.app"
+    )
+
     build_app(
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
-      export_method: "app-store"
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.inspektoor.app" => "match AppStore com.inspektoor.app"
+        }
+      }
     )
 
     upload_to_testflight(
