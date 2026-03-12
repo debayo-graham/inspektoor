@@ -39,9 +39,8 @@ const List<InspectionItemTypeDef> kInspectionItemTypes = [
   InspectionItemTypeDef(type: 'signature',       label: 'Signature',               group: 'Data Entry'),
 ];
 
-/// All display labels in dropdown order (signature excluded — auto-appended).
+/// All display labels in dropdown order.
 List<String> get kItemTypeLabels => kInspectionItemTypes
-    .where((t) => t.type != 'signature')
     .map((t) => t.label)
     .toList();
 

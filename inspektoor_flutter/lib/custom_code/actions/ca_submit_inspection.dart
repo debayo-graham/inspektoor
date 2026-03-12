@@ -72,6 +72,20 @@ Future<dynamic> caSubmitInspection() async {
 
     final inspectionId = inspectionRow['id'] as String;
 
+    // ── 3b. UPDATE asset last_inspected_at ───────────────────────────────
+    try {
+      await supabase
+          .from('assets')
+          .update({
+            'last_inspected_at':
+                completedAt ?? DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', assetId);
+    } catch (e) {
+      // Non-critical — log but don't fail the submission.
+      debugPrint('WARNING: failed to update last_inspected_at: $e');
+    }
+
     // ── 4. INSERT inspection_items (batch) ───────────────────────────────
     if (items.isNotEmpty) {
       final itemRows = items.map((item) {

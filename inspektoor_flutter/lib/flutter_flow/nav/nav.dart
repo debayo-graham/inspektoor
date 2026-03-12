@@ -17,6 +17,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import 'serialization_util.dart';
 
 import '/index.dart';
+import '/features/inspection_form/pages/choose_form_landing_page.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -188,9 +189,9 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => CreateInspectionFormPageWidget(),
         ),
         FFRoute(
-          name: ChooseInspectionFormPageWidget.routeName,
-          path: ChooseInspectionFormPageWidget.routePath,
-          builder: (context, params) => ChooseInspectionFormPageWidget(),
+          name: ChooseFormLandingPage.routeName,
+          path: ChooseFormLandingPage.routePath,
+          builder: (context, params) => const ChooseFormLandingPage(),
         ),
         FFRoute(
           name: InspectionGalleryPageWidget.routeName,

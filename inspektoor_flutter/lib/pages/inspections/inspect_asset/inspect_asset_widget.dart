@@ -47,6 +47,10 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
   ///
   /// If the user has answered at least one item, shows a confirmation dialog
   /// that requires typing "confirm" before allowing navigation away.
+  /// Pops the route unconditionally, bypassing the PopScope guard.
+  /// onPopInvokedWithResult will fire with didPop: true, which is a no-op.
+  void _forcePop() => Navigator.of(context).pop();
+
   Future<void> _handleBackTap() async {
     if (_isShowingConfirm || _submitted) return;
 
@@ -54,7 +58,7 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
         InspectionSession.answeredCount(FFAppState().inspectionDraftJson) > 0;
 
     if (!hasStarted) {
-      Navigator.of(context).pop();
+      _forcePop();
       return;
     }
 
@@ -66,7 +70,7 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
       );
 
       if (confirmed == true && mounted) {
-        Navigator.of(context).pop();
+        _forcePop();
       }
     } finally {
       if (mounted) setState(() => _isShowingConfirm = false);
@@ -86,8 +90,12 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
       },
       child: PopScope(
         canPop: false,
-        onPopInvokedWithResult: (_, __) {
-          // Defer to next frame — navigator is locked during onPopInvoked.
+        onPopInvokedWithResult: (didPop, __) {
+          // didPop is true when the route was actually popped (e.g. after
+          // confirmation or submission). In that case the widget is already
+          // leaving — do nothing. Only show the dialog when the pop was
+          // prevented (didPop == false).
+          if (didPop) return;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) _handleBackTap();
           });
@@ -174,7 +182,7 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
               body: SafeArea(
                 top: true,
                 child: InspectionRunnerView(
-                  onSubmitted: () => _submitted = true,
+                  onSubmitted: () => setState(() => _submitted = true),
                   onInteracted: () {
                     if (!_hasInteracted) {
                       setState(() => _hasInteracted = true);

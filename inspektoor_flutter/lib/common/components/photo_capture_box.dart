@@ -79,6 +79,7 @@ class PhotoCaptureBox extends StatefulWidget {
 class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
   final PageController _pageCtrl = PageController();
   int _currentPage = 0;
+  bool _isCapturing = false;
 
   @override
   void dispose() {
@@ -90,13 +91,21 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
 
   /// Capture a photo, then open the preview screen seeded with it.
   Future<void> _captureAndPreview() async {
-    final bytes = await widget.onCapturePhoto();
+    if (_isCapturing) return;
+    setState(() => _isCapturing = true);
+    final Uint8List? bytes;
+    try {
+      bytes = await widget.onCapturePhoto();
+    } finally {
+      if (mounted) setState(() => _isCapturing = false);
+    }
     if (bytes == null || !mounted) return;
+    final photo = bytes;
 
     final result = await Navigator.of(context).push<List<Uint8List>>(
       MaterialPageRoute(
         builder: (_) => PhotoPreviewScreen(
-          initialPhotos: [...widget.photos, bytes],
+          initialPhotos: [...widget.photos, photo],
           initialIndex: widget.photos.length, // new photo is last
           maxPhotos: widget.maxPhotos,
           onCapturePhoto: widget.onCapturePhoto,
@@ -135,7 +144,14 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
 
   /// Capture another photo from the carousel "+" button.
   Future<void> _addFromCarousel() async {
-    final bytes = await widget.onCapturePhoto();
+    if (_isCapturing) return;
+    setState(() => _isCapturing = true);
+    final Uint8List? bytes;
+    try {
+      bytes = await widget.onCapturePhoto();
+    } finally {
+      if (mounted) setState(() => _isCapturing = false);
+    }
     if (bytes == null || !mounted) return;
     widget.onPhotosChanged([...widget.photos, bytes]);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -169,7 +185,7 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
 
   Widget _buildEmptyState() {
     return GestureDetector(
-      onTap: _captureAndPreview,
+      onTap: _isCapturing ? null : _captureAndPreview,
       child: CustomPaint(
         foregroundPainter: DashedBorderPainter(color: widget.borderColor),
         child: ClipRRect(
@@ -188,15 +204,23 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
                     color: widget.accentBgColor,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.photo_camera_outlined,
-                    color: widget.accentColor,
-                    size: 22,
-                  ),
+                  child: _isCapturing
+                      ? Padding(
+                          padding: const EdgeInsets.all(11),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: widget.accentColor,
+                          ),
+                        )
+                      : Icon(
+                          Icons.photo_camera_outlined,
+                          color: widget.accentColor,
+                          size: 22,
+                        ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  widget.emptyLabel,
+                  _isCapturing ? 'Opening camera…' : widget.emptyLabel,
                   style: _inter(13, FontWeight.w600, const Color(0xFF1D354F)),
                 ),
                 const SizedBox(height: 2),
@@ -239,12 +263,12 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
                         Image.memory(photos[i], fit: BoxFit.contain),
                   ),
                   // "+" add button (top-left)
-                  if (canAdd)
+                  if (canAdd || _isCapturing)
                     Positioned(
                       top: 8,
                       left: 8,
                       child: GestureDetector(
-                        onTap: _addFromCarousel,
+                        onTap: _isCapturing ? null : _addFromCarousel,
                         child: Container(
                           width: 32,
                           height: 32,
@@ -252,8 +276,16 @@ class _PhotoCaptureBoxState extends State<PhotoCaptureBox> {
                             color: Colors.black54,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.add_rounded,
-                              color: Colors.white, size: 20),
+                          child: _isCapturing
+                              ? const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.add_rounded,
+                                  color: Colors.white, size: 20),
                         ),
                       ),
                     ),

@@ -256,13 +256,14 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
 
   void _handleNext() {
     final t = widget.item['type'] as String? ?? '';
+    final itemLabel = widget.item['label'] as String? ?? '';
 
     if (t == 'photo') {
       if (_photos.isEmpty) return;
       _submit([
         {
           'key': 'photos',
-          'label': 'Photos',
+          'label': itemLabel.isNotEmpty ? itemLabel : 'Photos',
           'value': null,
           '_photos': _photos.map((b) => base64Encode(b)).toList(),
         }
@@ -275,7 +276,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
       _submit([
         {
           'key': 'signature_data',
-          'label': 'Signature',
+          'label': itemLabel.isNotEmpty ? itemLabel : 'Signature',
           'value': null,
           '_photos': [base64Encode(_signatureBytes!)],
           '_isSignature': true,
@@ -395,6 +396,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList(),
+      itemLabel: itemLabel.isNotEmpty ? itemLabel : 'Value',
     );
     // Enrich failed checks with failure photos and notes for upload.
     // Copy to Map<String, dynamic> since buildValues returns Map<String, String>.
