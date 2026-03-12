@@ -1581,9 +1581,11 @@ CREATE POLICY "delete_own_inspection_item_values" ON "public"."inspection_item_v
 
 
 
-CREATE POLICY "delete_own_inspection_items" ON "public"."inspection_items" FOR DELETE USING (("inspection_id" IN ( SELECT "inspections"."id"
-   FROM "public"."inspections"
-  WHERE ("inspections"."org_id" = (("auth"."jwt"() ->> 'org_id'::"text"))::"uuid"))));
+CREATE POLICY "delete_own_inspection_items" ON "public"."inspection_items" FOR DELETE USING (("inspection_id" IN ( SELECT "i"."id"
+   FROM "public"."inspections" "i"
+  WHERE ("i"."org_id" IN ( SELECT "uo"."org_id"
+           FROM "public"."users_orgs" "uo"
+          WHERE ("uo"."user_id" = "auth"."uid"()))))));
 
 
 
@@ -1633,9 +1635,11 @@ CREATE POLICY "insert_own_inspection_item_values" ON "public"."inspection_item_v
 
 
 
-CREATE POLICY "insert_own_inspection_items" ON "public"."inspection_items" FOR INSERT WITH CHECK (("inspection_id" IN ( SELECT "inspections"."id"
-   FROM "public"."inspections"
-  WHERE ("inspections"."org_id" = (("auth"."jwt"() ->> 'org_id'::"text"))::"uuid"))));
+CREATE POLICY "insert_own_inspection_items" ON "public"."inspection_items" FOR INSERT WITH CHECK (("inspection_id" IN ( SELECT "i"."id"
+   FROM "public"."inspections" "i"
+  WHERE ("i"."org_id" IN ( SELECT "uo"."org_id"
+           FROM "public"."users_orgs" "uo"
+          WHERE ("uo"."user_id" = "auth"."uid"()))))));
 
 
 
@@ -1866,9 +1870,11 @@ CREATE POLICY "select_own_inspection_item_values" ON "public"."inspection_item_v
 
 
 
-CREATE POLICY "select_own_inspection_items" ON "public"."inspection_items" FOR SELECT USING (("inspection_id" IN ( SELECT "inspections"."id"
-   FROM "public"."inspections"
-  WHERE ("inspections"."org_id" = (("auth"."jwt"() ->> 'org_id'::"text"))::"uuid"))));
+CREATE POLICY "select_own_inspection_items" ON "public"."inspection_items" FOR SELECT USING (("inspection_id" IN ( SELECT "i"."id"
+   FROM "public"."inspections" "i"
+  WHERE ("i"."org_id" IN ( SELECT "uo"."org_id"
+           FROM "public"."users_orgs" "uo"
+          WHERE ("uo"."user_id" = "auth"."uid"()))))));
 
 
 
@@ -1911,11 +1917,15 @@ CREATE POLICY "update_own_inspection_item_values" ON "public"."inspection_item_v
 
 
 
-CREATE POLICY "update_own_inspection_items" ON "public"."inspection_items" FOR UPDATE USING (("inspection_id" IN ( SELECT "inspections"."id"
-   FROM "public"."inspections"
-  WHERE ("inspections"."org_id" = (("auth"."jwt"() ->> 'org_id'::"text"))::"uuid")))) WITH CHECK (("inspection_id" IN ( SELECT "inspections"."id"
-   FROM "public"."inspections"
-  WHERE ("inspections"."org_id" = (("auth"."jwt"() ->> 'org_id'::"text"))::"uuid"))));
+CREATE POLICY "update_own_inspection_items" ON "public"."inspection_items" FOR UPDATE USING (("inspection_id" IN ( SELECT "i"."id"
+   FROM "public"."inspections" "i"
+  WHERE ("i"."org_id" IN ( SELECT "uo"."org_id"
+           FROM "public"."users_orgs" "uo"
+          WHERE ("uo"."user_id" = "auth"."uid"())))))) WITH CHECK (("inspection_id" IN ( SELECT "i"."id"
+   FROM "public"."inspections" "i"
+  WHERE ("i"."org_id" IN ( SELECT "uo"."org_id"
+           FROM "public"."users_orgs" "uo"
+          WHERE ("uo"."user_id" = "auth"."uid"()))))));
 
 
 

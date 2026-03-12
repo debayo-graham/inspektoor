@@ -168,6 +168,42 @@ INSP-02  Implement inspection submission action
              (inspection_item_id, key, label, value, photo_url, comment)
         Schema for these tables is defined in 05_data_model_map.md.
 
+INSP-05  Capture device GPS coordinates at inspection start
+  Gap:  The inspections table already has a gps column and caSubmitInspection
+        already reads draft['gps'] and writes it to the DB. However nothing in
+        the Flutter app ever populates the gps field in the draft JSON.
+  Work: 1. Check pubspec.yaml for geolocator — add if missing.
+        2. Request location permission when an inspection is started
+           (initInspectionDraft or the runner view's initState).
+        3. Call Geolocator.getCurrentPosition() and store
+           {lat, lng, accuracy} as JSON into the draft's gps field.
+        4. If permission denied or location unavailable, store null and
+           proceed — GPS is optional, never a submission blocker.
+  Depends on: INSP-02
+
+INSP-06  Show GPS location map pin on inspection summary page
+  Gap:  No map is shown anywhere in the inspection flow. The inspector
+        should see a map pin on the summary screen confirming where the
+        inspection was recorded before they submit.
+  Work: 1. Check pubspec.yaml for flutter_map or google_maps_flutter.
+           Prefer flutter_map (OpenStreetMap, no API key required).
+        2. On InspectionSummaryView, if gps is non-null in the draft,
+           render a small embedded map (180–200px tall) with a pin at
+           the captured lat/lng. Map is non-interactive (static view).
+        3. Show formatted coordinates as text below the map
+           (e.g. "12.3456° N, 1.2345° W").
+        4. If GPS is null, show a "Location not captured" placeholder row.
+        5. Extract as a reusable InspectionLocationMap widget for reuse
+           in INSP-07.
+  Depends on: INSP-05
+
+INSP-07  Display GPS map on inspection history / detail view
+  Gap:  When a future inspection detail/history page is built, the stored
+        gps coordinates in inspections.gps should be shown on a map.
+  Work: Read gps from the inspection row and render InspectionLocationMap
+        (built in INSP-06) with the stored coordinates.
+  Depends on: INSP-06
+
 INSP-03  Wire submission action into inspect_asset page
   Gap:  Even after INSP-02 exists, it must be called from the page.
   Work: Add a submit/complete button to inspect_asset page that calls

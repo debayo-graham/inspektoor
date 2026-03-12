@@ -263,7 +263,8 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
         {
           'key': 'photos',
           'label': 'Photos',
-          'value': _photos.map((b) => base64Encode(b)).toList(),
+          'value': null,
+          '_photos': _photos.map((b) => base64Encode(b)).toList(),
         }
       ]);
       return;
@@ -275,7 +276,9 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
         {
           'key': 'signature_data',
           'label': 'Signature',
-          'value': base64Encode(_signatureBytes!),
+          'value': null,
+          '_photos': [base64Encode(_signatureBytes!)],
+          '_isSignature': true,
         }
       ]);
       return;
@@ -313,7 +316,17 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
         }
       }
       _submit([
-        {'key': 'selected', 'label': _singleChoice, 'value': _singleChoice}
+        {
+          'key': 'selected',
+          'label': _singleChoice,
+          'value': _singleChoice,
+          if (_singleChoice.toLowerCase() == 'fail') ...{
+            '_photos': (_failurePhotos[_singleKey] ?? [])
+                .map((b) => base64Encode(b))
+                .toList(),
+            '_comment': (_failureNotes[_singleKey] ?? '').trim(),
+          },
+        }
       ]);
       return;
     }
@@ -373,7 +386,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
       }
     }
 
-    _submit(InspectionSession.buildValues(
+    final rawValues = InspectionSession.buildValues(
       type: t,
       checkValues: _checkValues,
       multiSelected: _multiSelected,
@@ -382,7 +395,21 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList(),
-    ));
+    );
+    // Enrich failed checks with failure photos and notes for upload.
+    // Copy to Map<String, dynamic> since buildValues returns Map<String, String>.
+    final submitValues = rawValues.map((v) {
+      final m = Map<String, dynamic>.from(v);
+      if (t == 'multi-check' && m['value'] == 'fail') {
+        final id = m['key'] as String? ?? '';
+        m['_photos'] = (_failurePhotos[id] ?? [])
+            .map((b) => base64Encode(b))
+            .toList();
+        m['_comment'] = (_failureNotes[id] ?? '').trim();
+      }
+      return m;
+    }).toList();
+    _submit(submitValues);
   }
 
   @override

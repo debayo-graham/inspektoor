@@ -26,6 +26,7 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
 
   bool _hasInteracted = false;
   bool _isShowingConfirm = false;
+  bool _submitted = false;
 
   @override
   void initState() {
@@ -47,7 +48,7 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
   /// If the user has answered at least one item, shows a confirmation dialog
   /// that requires typing "confirm" before allowing navigation away.
   Future<void> _handleBackTap() async {
-    if (_isShowingConfirm) return;
+    if (_isShowingConfirm || _submitted) return;
 
     final hasStarted = _hasInteracted ||
         InspectionSession.answeredCount(FFAppState().inspectionDraftJson) > 0;
@@ -85,7 +86,12 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
       },
       child: PopScope(
         canPop: false,
-        onPopInvokedWithResult: (_, __) => _handleBackTap(),
+        onPopInvokedWithResult: (_, __) {
+          // Defer to next frame — navigator is locked during onPopInvoked.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _handleBackTap();
+          });
+        },
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isTablet = constraints.maxWidth >= 768;
@@ -168,6 +174,7 @@ class _InspectAssetWidgetState extends State<InspectAssetWidget> {
               body: SafeArea(
                 top: true,
                 child: InspectionRunnerView(
+                  onSubmitted: () => _submitted = true,
                   onInteracted: () {
                     if (!_hasInteracted) {
                       setState(() => _hasInteracted = true);

@@ -26,7 +26,10 @@ class InspectionRunnerView extends StatefulWidget {
   /// even before the first item is fully submitted.
   final VoidCallback? onInteracted;
 
-  const InspectionRunnerView({super.key, this.onInteracted});
+  /// Called after a successful submission, before Navigator.pop.
+  final VoidCallback? onSubmitted;
+
+  const InspectionRunnerView({super.key, this.onInteracted, this.onSubmitted});
 
   @override
   State<InspectionRunnerView> createState() => _InspectionRunnerViewState();
@@ -161,6 +164,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
           FFAppState().templateJson = '';
           FFAppState().currentInspectionIndex = 0;
         });
+        widget.onSubmitted?.call();
         Navigator.of(context).pop();
       } else {
         final error = result['error'] as String? ?? 'Submission failed.';
@@ -271,22 +275,34 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
       case 'single-check':
         final choice = cache['singleChoice'] as String? ?? '';
         if (choice.isEmpty) return null;
+        const singleKey = '_single';
+        final scNotes =
+            (cache['failureNotes'] as Map?)?.cast<String, String>() ?? {};
+        final scPhotos =
+            (cache['failurePhotos'] as Map?)?.cast<String, dynamic>() ?? {};
         if (choice.toLowerCase() == 'fail') {
-          // Cache stores single-check failure data under '_single' key
-          const singleKey = '_single';
-          final notes =
-              (cache['failureNotes'] as Map?)?.cast<String, String>() ?? {};
-          final photos =
-              (cache['failurePhotos'] as Map?)?.cast<String, dynamic>() ?? {};
           final reqPhoto = cfg['photoRequired'] as bool? ?? false;
-          final hasNote = (notes[singleKey] ?? '').trim().isNotEmpty;
-          final hasPhotos = photos[singleKey] is List
-              ? (photos[singleKey] as List).isNotEmpty
-              : (photos[singleKey] as String? ?? '').isNotEmpty;
+          final hasNote = (scNotes[singleKey] ?? '').trim().isNotEmpty;
+          final hasPhotos = scPhotos[singleKey] is List
+              ? (scPhotos[singleKey] as List).isNotEmpty
+              : (scPhotos[singleKey] as String? ?? '').isNotEmpty;
           if (reqPhoto && !hasPhotos) return null;
           if (!hasNote && !hasPhotos) return null;
         }
-        return [{'key': 'selected', 'label': choice, 'value': choice}];
+        return [
+          {
+            'key': 'selected',
+            'label': choice,
+            'value': choice,
+            if (choice.toLowerCase() == 'fail') ...{
+              '_photos': (scPhotos[singleKey] as List?)
+                      ?.whereType<String>()
+                      .toList() ??
+                  <String>[],
+              '_comment': (scNotes[singleKey] ?? '').trim(),
+            },
+          }
+        ];
 
       case 'multi-check':
         final cv =
@@ -311,27 +327,50 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
           if (reqPhoto && !hasPhotos) return null;
           if (!hasNote && !hasPhotos) return null;
         }
-        return InspectionSession.buildValues(
+        final result = InspectionSession.buildValues(
           type: 'multi-check',
           checkValues: cv,
           multiSelected: {},
           textValue: '',
           checks: checks.map((e) => Map<String, dynamic>.from(e)).toList(),
         );
+        // Enrich fail entries with failure photos and notes for upload.
+        for (final v in result) {
+          final id = v['key'] as String? ?? '';
+          if (v['value'] == 'fail') {
+            v['_photos'] = (photos[id] as List?)
+                    ?.whereType<String>()
+                    .toList() ??
+                <String>[];
+            v['_comment'] = (notes[id] ?? '').trim();
+          }
+        }
+        return result;
 
       case 'photo':
         final savedPhotos =
             (cache['photos'] as List?)?.whereType<String>() ?? [];
         if (savedPhotos.isEmpty) return null;
         return [
-          {'key': 'photos', 'label': 'Photos', 'value': savedPhotos.toList()}
+          {
+            'key': 'photos',
+            'label': 'Photos',
+            'value': null,
+            '_photos': savedPhotos.toList(),
+          }
         ];
 
       case 'signature':
         final sig = cache['signatureBase64'] as String? ?? '';
         if (sig.isEmpty) return null;
         return [
-          {'key': 'signature_data', 'label': 'Signature', 'value': sig}
+          {
+            'key': 'signature_data',
+            'label': 'Signature',
+            'value': null,
+            '_photos': <String>[sig],
+            '_isSignature': true,
+          }
         ];
 
       default:
