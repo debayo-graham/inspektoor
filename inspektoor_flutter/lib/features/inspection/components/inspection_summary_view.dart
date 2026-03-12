@@ -51,11 +51,22 @@ class InspectionSummaryView extends StatelessWidget {
   List<Uint8List> _extractImages(List<dynamic> values) {
     final images = <Uint8List>[];
     for (final v in values) {
-      final val = (v as Map?)?['value'];
+      final vMap = v as Map?;
+      // Check 'value' field (used by some types)
+      final val = vMap?['value'];
       if (val is String && _isBase64Image(val)) {
         try { images.add(base64Decode(val)); } catch (_) {}
       } else if (val is List) {
         for (final item in val) {
+          if (item is String && _isBase64Image(item)) {
+            try { images.add(base64Decode(item)); } catch (_) {}
+          }
+        }
+      }
+      // Also check '_photos' field (used by signature and photo types)
+      final photos = vMap?['_photos'];
+      if (photos is List) {
+        for (final item in photos) {
           if (item is String && _isBase64Image(item)) {
             try { images.add(base64Decode(item)); } catch (_) {}
           }
@@ -160,7 +171,7 @@ class InspectionSummaryView extends StatelessWidget {
                       card = _SignatureCard(
                         stepNum: stepNum,
                         label: label,
-                        inspectorName: FFAppState().fullName,
+                        inspectorName: key == '__final_signature__' ? FFAppState().fullName : null,
                         values: values,
                         extractImages: _extractImages,
                       );
@@ -1157,7 +1168,7 @@ class _PhotoCard extends StatelessWidget {
 class _SignatureCard extends StatelessWidget {
   final int stepNum;
   final String label;
-  final String inspectorName;
+  final String? inspectorName;
   final List<dynamic> values;
   final List<Uint8List> Function(List<dynamic>) extractImages;
 
@@ -1209,16 +1220,16 @@ class _SignatureCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Inspected by',
-                                  style: inspInterStyle(
-                                      11, FontWeight.w500, const Color(0xFF94A3B8))),
-                              const SizedBox(height: 2),
-                              Text(
-                                  inspectorName.isNotEmpty
-                                      ? inspectorName
-                                      : 'Unknown',
+                              Text(label,
                                   style: inspInterStyle(
                                       15, FontWeight.w700, kInspPrimaryText)),
+                              if (inspectorName != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                  'Signed by ${inspectorName!.isNotEmpty ? inspectorName : 'Unknown'}',
+                                  style: inspInterStyle(
+                                      11, FontWeight.w500, const Color(0xFF94A3B8))),
+                              ],
                             ],
                           ),
                         ),

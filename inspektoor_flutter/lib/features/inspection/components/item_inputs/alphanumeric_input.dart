@@ -158,37 +158,69 @@ class _InspectionAlphanumericInputState
               : null,
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (!_hasValue)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   widget.placeholder.toUpperCase(),
+                  textAlign: TextAlign.center,
                   style: inspInterStyle(
                           10, FontWeight.w700, const Color(0xFFCBD5E1))
                       .copyWith(letterSpacing: 1.5),
                 ),
               ),
-            Text(
-              _hasValue ? _displayValue : patternDisplay,
-              textAlign: TextAlign.center,
-              style: inspInterStyle(
-                _hasValue ? 30 : 20,
-                FontWeight.w800,
-                _valueColor,
-              ).copyWith(letterSpacing: _hasValue ? 4.0 : 2.0),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final raw = _hasValue ? _displayValue : patternDisplay;
+                // When a format pattern is set (e.g. "ABC-1234") the hyphens /
+                // spaces already act as natural word-break points, so we keep
+                // the letter-spacing and let Flutter break there.
+                // For free-form codes with no word breaks we insert zero-width
+                // spaces so any character boundary is breakable, but we must
+                // remove letter-spacing to avoid visually doubling the gap.
+                final hasNaturalBreaks = _hasPattern;
+                final breakableText = hasNaturalBreaks
+                    ? raw
+                    : raw.split('').join('\u200B');
+                final letterSpacing = hasNaturalBreaks
+                    ? (_hasValue ? 4.0 : 2.0)
+                    : 0.0;
+                return FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: constraints.maxWidth * 2,
+                    ),
+                    child: Text(
+                      breakableText,
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      style: inspInterStyle(
+                        _hasValue ? 30 : 20,
+                        FontWeight.w800,
+                        _valueColor,
+                      ).copyWith(letterSpacing: letterSpacing),
+                    ),
+                  ),
+                );
+              },
             ),
             if (_hasValue) ...[
               const SizedBox(height: 4),
               if (_isComplete)
                 Text(
                   '✓ Valid format',
+                  textAlign: TextAlign.center,
                   style: inspInterStyle(10, FontWeight.w700,
                       Colors.white.withValues(alpha: 0.4)),
                 )
               else if (_hasPattern)
                 Text(
                   '${_displayValue.length} / ${_slots.length} characters',
+                  textAlign: TextAlign.center,
                   style: inspInterStyle(10, FontWeight.w700,
                       Colors.white.withValues(alpha: 0.4)),
                 ),

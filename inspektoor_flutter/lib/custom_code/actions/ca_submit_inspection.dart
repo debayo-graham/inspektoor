@@ -10,11 +10,15 @@ import 'package:flutter/material.dart';
 
 import 'dart:convert';
 
+import 'package:image/image.dart' as img;
+
+import '/flutter_flow/upload_data.dart';
+
 /// Persists the in-memory inspection draft to the database.
 ///
-/// Inserts one row into `inspections`, one row per item into
-/// `inspection_items`, and one row per value into
-/// `inspection_item_values`.
+/// Uploads photos/signatures to Supabase Storage, then inserts one row into
+/// `inspections`, one row per item into `inspection_items`, and one row per
+/// value into `inspection_item_values` (with `photo_url` and `comment`).
 ///
 /// Returns `{ 'success': true/false, 'data': ..., 'error': ..., 'status': ... }`
 /// following the same pattern as `upsertAsset`.
@@ -68,6 +72,20 @@ Future<dynamic> caSubmitInspection() async {
 
     final inspectionId = inspectionRow['id'] as String;
 
+    // ── 3b. UPDATE asset last_inspected_at ───────────────────────────────
+    try {
+      await supabase
+          .from('assets')
+          .update({
+            'last_inspected_at':
+                completedAt ?? DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', assetId);
+    } catch (e) {
+      // Non-critical — log but don't fail the submission.
+      debugPrint('WARNING: failed to update last_inspected_at: $e');
+    }
+
     // ── 4. INSERT inspection_items (batch) ───────────────────────────────
     if (items.isNotEmpty) {
       final itemRows = items.map((item) {
@@ -95,7 +113,7 @@ Future<dynamic> caSubmitInspection() async {
         itemIdMap[row['template_item_key'] as String] = row['id'] as String;
       }
 
-      // ── 5. INSERT inspection_item_values (batch) ─────────────────────
+      // ── 5. Upload photos & build inspection_item_values ────────────────
       final valueRows = <Map<String, dynamic>>[];
       for (final item in items) {
         final key = item['template_item_key'] as String? ?? '';
@@ -105,11 +123,57 @@ Future<dynamic> caSubmitInspection() async {
         final values =
             (item['values'] as List?)?.cast<Map<String, dynamic>>() ?? [];
         for (final v in values) {
+          // Extract transient upload keys (set by _handleNext / _valuesFromCache).
+          var photoBase64List =
+              (v['_photos'] as List?)?.whereType<String>().toList() ?? [];
+          final comment = v['_comment'] as String?;
+          var isSignature = v['_isSignature'] == true;
+
+          // Fallback: detect legacy base64 data stored directly in `value`.
+          final rawVal = v['value'];
+          if (photoBase64List.isEmpty && rawVal is List) {
+            final strings = rawVal.whereType<String>().toList();
+            if (strings.isNotEmpty && strings.first.length > 100) {
+              photoBase64List = strings;
+            }
+          } else if (photoBase64List.isEmpty &&
+              rawVal is String &&
+              rawVal.length > 100) {
+            photoBase64List = [rawVal];
+            isSignature = true;
+          }
+
+          // Upload photos to Storage if present.
+          String? photoUrlJson;
+          if (photoBase64List.isNotEmpty) {
+            final urls = await _uploadPhotos(
+              orgId: orgId,
+              inspectionId: inspectionId,
+              itemKey: key,
+              checkKey: v['key'] as String? ?? 'photo',
+              base64Photos: photoBase64List,
+              isSignature: isSignature,
+            );
+            photoUrlJson = json.encode(urls);
+          }
+
+          // If we uploaded photos, clear the value (was base64 data).
+          // Otherwise stringify normally.
+          final String? valueStr;
+          if (photoUrlJson != null || rawVal is List || rawVal == null) {
+            valueStr = null;
+          } else {
+            valueStr = _stringifyValue(rawVal);
+          }
+
           valueRows.add({
             'inspection_item_id': itemId,
             'key': v['key'] as String? ?? '',
             'label': v['label'] as String?,
-            'value': _stringifyValue(v['value']),
+            'value': valueStr,
+            'photo_url': photoUrlJson,
+            'comment':
+                (comment != null && comment.isNotEmpty) ? comment : null,
           });
         }
       }
@@ -152,6 +216,57 @@ String? _stringifyValue(dynamic val) {
   if (val == null) return null;
   if (val is String) return val;
   return json.encode(val);
+}
+
+/// Compresses a photo to 1280px max / 80% JPEG before upload.
+/// Signatures are kept as lossless PNG. Falls back to original on error.
+Uint8List _compressPhoto(Uint8List bytes, {bool isSignature = false}) {
+  try {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return bytes;
+    if (isSignature) return Uint8List.fromList(img.encodePng(decoded));
+    final resized = decoded.width >= decoded.height
+        ? (decoded.width > 1280 ? img.copyResize(decoded, width: 1280) : decoded)
+        : (decoded.height > 1280 ? img.copyResize(decoded, height: 1280) : decoded);
+    return Uint8List.fromList(img.encodeJpg(resized, quality: 80));
+  } catch (_) {
+    return bytes;
+  }
+}
+
+/// Uploads base64-encoded photos to Supabase Storage and returns public URLs.
+///
+/// Path convention: `{orgId}/{inspectionId}/{itemKey}/{filename}`
+Future<List<String>> _uploadPhotos({
+  required String orgId,
+  required String inspectionId,
+  required String itemKey,
+  required String checkKey,
+  required List<String> base64Photos,
+  bool isSignature = false,
+}) async {
+  final urls = <String>[];
+  final ts = DateTime.now().millisecondsSinceEpoch;
+  for (var i = 0; i < base64Photos.length; i++) {
+    final bytes = _compressPhoto(
+      base64Decode(base64Photos[i]),
+      isSignature: isSignature,
+    );
+    final ext = isSignature ? 'png' : 'jpg';
+    final filename =
+        isSignature ? 'signature_$ts.png' : '${checkKey}_${ts}_$i.$ext';
+    final storagePath = '$orgId/$inspectionId/$itemKey/$filename';
+    final selectedFile = SelectedFile(
+      storagePath: storagePath,
+      bytes: Uint8List.fromList(bytes),
+    );
+    final url = await uploadSupabaseStorageFile(
+      bucketName: 'inspection-photos',
+      selectedFile: selectedFile,
+    );
+    urls.add(url);
+  }
+  return urls;
 }
 
 /// Parse template JSON into a map keyed by item key for config lookup.

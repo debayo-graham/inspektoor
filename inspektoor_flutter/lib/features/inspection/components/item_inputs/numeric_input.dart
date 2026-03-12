@@ -214,35 +214,46 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                 : null,
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    _hasValue ? widget.controller.text.trim() : '0',
-                    style: inspInterStyle(48, FontWeight.w800, _valueColor),
-                  ),
-                  if (widget.unit != null) ...[
-                    const SizedBox(width: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        widget.unit!,
-                        style:
-                            inspInterStyle(18, FontWeight.w700, _unitColor),
-                      ),
+              LayoutBuilder(
+                builder: (context, constraints) => FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: constraints.maxWidth * 2,
                     ),
-                  ],
-                ],
+                    child: Text.rich(
+                      TextSpan(children: [
+                        TextSpan(
+                          // Zero-width spaces let Flutter break between any two digits.
+                          text: (_hasValue
+                                  ? widget.controller.text.trim()
+                                  : '0')
+                              .split('')
+                              .join('\u200B'),
+                          style: inspInterStyle(48, FontWeight.w800, _valueColor),
+                        ),
+                        if (widget.unit != null)
+                          TextSpan(
+                            text: ' ${widget.unit!}',
+                            style: inspInterStyle(18, FontWeight.w700, _unitColor),
+                          ),
+                      ]),
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                    ),
+                  ),
+                ),
               ),
               if (_hasRange && _hasValue) ...[
                 const SizedBox(height: 4),
                 _inRange
                     ? Text(
                         '✓ Within range',
-                        style: inspInterStyle(
-                            11, FontWeight.w700, kInspSuccess),
+                        textAlign: TextAlign.center,
+                        style: inspInterStyle(11, FontWeight.w700, kInspSuccess),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -548,35 +559,45 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                   : null,
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      _hasValue ? widget.controller.text.trim() : '0',
-                      style: inspInterStyle(48, FontWeight.w800, _valueColor),
-                    ),
-                    if (widget.unit != null) ...[
-                      const SizedBox(width: 6),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          widget.unit!,
-                          style:
-                              inspInterStyle(18, FontWeight.w700, _unitColor),
-                        ),
+                LayoutBuilder(
+                  builder: (context, constraints) => FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.center,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * 2,
                       ),
-                    ],
-                  ],
+                      child: Text.rich(
+                        TextSpan(children: [
+                          TextSpan(
+                            text: (_hasValue
+                                    ? widget.controller.text.trim()
+                                    : '0')
+                                .split('')
+                                .join('\u200B'),
+                            style: inspInterStyle(48, FontWeight.w800, _valueColor),
+                          ),
+                          if (widget.unit != null)
+                            TextSpan(
+                              text: ' ${widget.unit!}',
+                              style: inspInterStyle(18, FontWeight.w700, _unitColor),
+                            ),
+                        ]),
+                        textAlign: TextAlign.center,
+                        softWrap: true,
+                      ),
+                    ),
+                  ),
                 ),
                 if (_hasRange && _hasValue) ...[
                   const SizedBox(height: 4),
                   _inRange
                       ? Text(
                           '✓ Within range',
-                          style: inspInterStyle(
-                              11, FontWeight.w700, kInspSuccess),
+                          textAlign: TextAlign.center,
+                          style: inspInterStyle(11, FontWeight.w700, kInspSuccess),
                         )
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,

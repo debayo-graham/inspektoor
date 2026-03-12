@@ -32,17 +32,15 @@ class InspectionSession {
             .compareTo((b['order'] as num?) ?? 0),
       );
 
-    // Remove any user-added signature items (signature is now auto-appended).
-    items.removeWhere((e) => e['type'] == 'signature');
-
-    // Always append a mandatory signature step at the end.
+    // Always append a mandatory Inspector Signature step at the end.
+    // User-added signature items (e.g. Driver Signature) are kept as-is.
     items.add({
       'key': '__final_signature__',
       'type': 'signature',
-      'label': 'Sign here',
+      'label': 'Inspector Signature',
       'order': 999999,
       'config': <String, dynamic>{
-        'note': 'Please sign to complete the inspection',
+        'note': 'Inspector sign-off',
       },
     });
 
@@ -203,13 +201,14 @@ class InspectionSession {
     required Set<String> multiSelected,
     required String textValue,
     required List<Map<String, dynamic>> checks,
+    String itemLabel = 'Value',
   }) {
     switch (type) {
       case 'numeric':
       case 'comment-box':
       case 'alphanumeric':
         return [
-          {'key': 'value', 'label': 'Value', 'value': textValue.trim()}
+          {'key': 'value', 'label': itemLabel, 'value': textValue.trim()}
         ];
 
       case 'multi-check':

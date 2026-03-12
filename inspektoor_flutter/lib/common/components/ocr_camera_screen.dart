@@ -414,7 +414,21 @@ class _OcrCameraScreenState extends State<OcrCameraScreen>
             )
           else
             const Center(
-              child: CircularProgressIndicator(color: Colors.white),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Colors.white),
+                  SizedBox(height: 16),
+                  Text(
+                    'Opening camera…',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
 
           // ── Viewfinder overlay ───────────────────────────────────────────

@@ -1,10 +1,11 @@
 Development Backlog
 Generated: 2026-02-28
+Last updated: 2026-03-12
 Source: gaps identified in 06_module_inventory.md and 05_data_model_map.md
 Scope: complete what exists — no new features, no redesigns
 
 --------------------------------------------------
-MODULE: INSPECTION EXECUTION 
+MODULE: INSPECTION EXECUTION
 --------------------------------------------------
 
 Priority: Critical. The inspection draft infrastructure exists but the
@@ -118,7 +119,9 @@ INSP-01  Build inspect_asset page UI  [DONE — 2026-03-11]
     inspect_asset_widget.dart
       - Title bar: "INSPECTION" label above asset name.
       - Body: InspectionRunnerView with onInteracted callback.
-      - Back navigation: PopScope + confirm dialog with re-entrancy guard.
+      - Back navigation: PopScope(canPop: false) + onPopInvokedWithResult checks
+        didPop before triggering dialog. _forcePop() for programmatic navigation.
+        _submitted flag prevents dialog when submit navigates away.
       - Tablet: hides AppBar when ≥768px (runner has its own header).
 
   UI Modernisation:
@@ -140,6 +143,13 @@ INSP-01  Build inspect_asset page UI  [DONE — 2026-03-11]
     - OCR camera: custom viewfinder, 3 extraction modes (numeric, alphanumeric, freeText).
     - Camera icon stays tappable for rescan on all input types.
 
+  Display overflow fix (numeric + alphanumeric inputs):
+    - LayoutBuilder > FittedBox(scaleDown) > ConstrainedBox(maxWidth: 2×) > Text.rich/Text
+    - Zero-width spaces (\u200B) between digits/chars for character-level line breaking.
+    - Alphanumeric: letter-spacing preserved for format-patterned values (natural breaks
+      via hyphens/spaces); letter-spacing dropped for free-form codes (\u200B used instead).
+    - Both mobile and tablet layouts covered.
+
 INSP-01b  Comment-box "Quick Fill" from previous inspections
   Gap:  The comment-box input has hardcoded quick-fill chips
         ("No issues noted", "Minor wear observed", etc.). These should
@@ -154,7 +164,7 @@ INSP-01b  Comment-box "Quick Fill" from previous inspections
           3. Fall back to the hardcoded defaults when no history exists.
   Depends on: INSP-02
 
-INSP-02  Implement inspection submission action
+INSP-02  Implement inspection submission action  [DONE — 2026-03-12]
   Gap:  No action submits FFAppState.inspectionDraftJson to the database.
         inspections, inspection_items, and inspection_item_values are never
         written from Flutter.
@@ -168,54 +178,135 @@ INSP-02  Implement inspection submission action
              (inspection_item_id, key, label, value, photo_url, comment)
         Schema for these tables is defined in 05_data_model_map.md.
 
-INSP-03  Wire submission action into inspect_asset page
+  Pre-submission close-out work done (2026-03-12):
+    inspection_item_types.dart
+      - Re-enabled 'signature' in kItemTypeLabels getter (was filtered out).
+        Users can now add Signature items to any template.
+
+    inspection_session.dart
+      - Removed items.removeWhere((e) => e['type'] == 'signature') — user-added
+        signature items (e.g. "Driver Signature") now pass through to the runner.
+      - Auto-appended __final_signature__ step retains its 'Inspector Signature'
+        label so it is clearly distinguished in submitted data.
+      - buildValues() now accepts itemLabel parameter (default 'Value'). Used for
+        numeric / alphanumeric / comment-box label field instead of hardcoded "Value".
+
+    inspection_item_step.dart
+      - _handleNext() extracts itemLabel from widget.item['label'] and threads it
+        through to all submit paths:
+          photo:     'label': itemLabel (was hardcoded 'Photos')
+          signature: 'label': itemLabel (was hardcoded 'Signature')
+          text entry: passes itemLabel to buildValues()
+      - Result: inspection_item_values.label in the DB now stores the real template
+        item label (e.g. "Trailer number", "Driver Signature") instead of "Value".
+
+    inspection_summary_view.dart
+      - _extractImages() now reads _photos field (base64 list) in addition to value
+        field — fixes signature image not displaying on summary page.
+      - _SignatureCard shows item label as primary bold header (was hardcoded
+        'Inspected by').
+      - inspectorName parameter is now nullable (String?). "Signed by [name]" sub-line
+        only rendered for __final_signature__ key (inspector auto-step). All other
+        signature items (e.g. Driver Signature) suppress the "Signed by" line.
+
+  Still to do (INSP-02 not yet complete):
+    - Implement caSubmitInspection custom action (DB writes).
+    - Wire submit button in InspectionSummaryView to the action.
+    - Upload photo/signature bytes to Supabase Storage before inserting URLs.
+
+INSP-03  Wire submission action into inspect_asset page  [DONE — 2026-03-12]
   Gap:  Even after INSP-02 exists, it must be called from the page.
   Work: Add a submit/complete button to inspect_asset page that calls
         caSubmitInspection and navigates on success.
   Depends on: INSP-01, INSP-02
 
-INSP-04  Update asset.last_inspected_at on inspection submit
+INSP-04  Update asset.last_inspected_at on inspection submit  [DONE — 2026-03-12]
   Gap:  The assets table has a last_inspected_at column. It is never updated.
   Work: After a successful inspection INSERT, update the asset row:
           .from('assets').update({'last_inspected_at': completedAt}).eq('id', assetId)
         This can be done inside caSubmitInspection or via a DB trigger.
   Depends on: INSP-02
 
+INSP-05  Capture device GPS coordinates at inspection start
+  Gap:  The inspections table already has a gps column and caSubmitInspection
+        already reads draft['gps'] and writes it to the DB. However nothing in
+        the Flutter app ever populates the gps field in the draft JSON.
+  Work: 1. Check pubspec.yaml for geolocator — add if missing.
+        2. Request location permission when an inspection is started
+           (initInspectionDraft or the runner view's initState).
+        3. Call Geolocator.getCurrentPosition() and store
+           {lat, lng, accuracy} as JSON into the draft's gps field.
+        4. If permission denied or location unavailable, store null and
+           proceed — GPS is optional, never a submission blocker.
+  Depends on: INSP-02
+
+INSP-06  Show GPS location map pin on inspection summary page
+  Gap:  No map is shown anywhere in the inspection flow. The inspector
+        should see a map pin on the summary screen confirming where the
+        inspection was recorded before they submit.
+  Work: 1. Check pubspec.yaml for flutter_map or google_maps_flutter.
+           Prefer flutter_map (OpenStreetMap, no API key required).
+        2. On InspectionSummaryView, if gps is non-null in the draft,
+           render a small embedded map (180–200px tall) with a pin at
+           the captured lat/lng. Map is non-interactive (static view).
+        3. Show formatted coordinates as text below the map
+           (e.g. "12.3456° N, 1.2345° W").
+        4. If GPS is null, show a "Location not captured" placeholder row.
+        5. Extract as a reusable InspectionLocationMap widget for reuse
+           in INSP-07.
+  Depends on: INSP-05
+
+INSP-07  Display GPS map on inspection history / detail view
+  Gap:  When a future inspection detail/history page is built, the stored
+        gps coordinates in inspections.gps should be shown on a map.
+  Work: Read gps from the inspection row and render InspectionLocationMap
+        (built in INSP-06) with the stored coordinates.
+  Depends on: INSP-06
+
 --------------------------------------------------
 MODULE: INSPECTION FORM TEMPLATES
 --------------------------------------------------
 
-FORM-01  Confirm inspection_templates INSERT is wired in create page
+FORM-01  Confirm inspection_templates INSERT is wired in create page  [DONE — 2026-03-12]
   File: lib/pages/inspection_forms/create_inspection_form_page/
-  Gap:  The create page imports schema manipulation actions and card editor.
-        No custom action inserts into inspection_templates.
-        This is likely handled via a FlutterFlow page action (not visible in
-        custom_code/). Needs verification that a save path exists and writes
-        schema JSONB to the database.
-  Work: Trace the save/submit action on the create page. If no DB write
-        exists, add a caCreateInspectionTemplate action that inserts:
-          (org_id, name, category, schema, version=1, is_active=true,
-           created_by=currentUserUid)
+  Verified: Save button calls wrapSchema() then InspectionTemplatesTable().insert()
+            with org_id, name, schema, category. Navigates to InspectionGalleryPage on success.
 
-FORM-02  Confirm inspection_templates UPDATE is wired in edit page
+FORM-02  Confirm inspection_templates UPDATE is wired in edit page  [DONE — 2026-03-12]
   File: lib/pages/inspection_forms/edit_inspection_form_page/
-  Gap:  Same as FORM-01 for the edit path. Needs to UPDATE the schema,
-        name, category, is_active on the existing template row.
-  Work: Verify the save path. If missing, add a caUpdateInspectionTemplate action.
+  Verified: Save button calls wrapSchema() then InspectionTemplatesTable().update()
+            matching on id. Updates name, schema, category. Navigates back on success.
 
-FORM-03  Wire choose_inspection_form_page to launch inspection
-  File: lib/pages/inspection_forms/choose_inspection_form_page/
-  Gap:  Page has a search field but the path from "choose a form" to
-        "start inspection" is not confirmed.
-  Work: Verify that selecting a template on this page calls initInspectionDraft
-        (already implemented) and navigates to inspect_asset.
-  Depends on: INSP-01
+FORM-03  Redesign "Use Existing Form" selection flow  [IN PROGRESS — 2026-03-12]
+  Replaces: choose_inspection_form_page, inspection_gallery_page,
+            preview_inspection_form_page (FlutterFlow-generated, do not match new UI)
+  Design:   4-screen flow from UI/UX designers (DM Sans, sky-blue palette)
+  Screens:
+    Screen 1 — ChooseFormLandingPage   (lib/features/inspection_form/pages/)
+      "Use Existing Form" card + "Build New Form" row
+    Screen 2 — FormSearchPage
+      Live search (300ms debounce) + category filter chips + results list
+      API: SearchInspectionFormTemplatesCall (search_inspection_templates RPC)
+           Response fields: id, name, category, version, is_active, created_at,
+                            created_by, creator_first_name, creator_last_name
+           Note: no step-count or last_used field in API — derive from schema length
+                 and created_at as fallback
+    Screen 3 — FormPreviewPage
+      Form header card + step list (icon derived from item type) + "Use This Form" CTA
+    Screen 4 — FormConfirmedPage
+      Animated green checkmark, form summary, "Start Inspection" + "Change Form"
+  Nav wiring: replace existing FFRoute entries for /chooseInspectionFormPage
+              and /inspectionGalleryPage; push Screens 2-4 imperatively
+  Open: "Start Inspection" wiring — confirm whether assetId is in context
+        before this flow starts, or if asset selection follows.
+  Depends on: INSP-01, INSP-03
 
 FORM-04  Verify preview_inspection_form_page renders real template data
+  Note: Screen 3 (FormPreviewPage) of FORM-03 supersedes this for the
+        inspection-start flow. This ticket remains only if the old
+        preview page is still needed for form management (admin view).
   File: lib/pages/inspection_forms/preview_inspection_form_page/
-  Gap:  File exists but was not deeply read. Preview may render static/empty content.
-  Work: Confirm the page reads from FFAppState.templateJson (or a passed
-        template row) and renders the form structure correctly.
+  Work: After FORM-03 is live, decide whether to delete or repurpose.
 
 --------------------------------------------------
 MODULE: ASSET LIST
