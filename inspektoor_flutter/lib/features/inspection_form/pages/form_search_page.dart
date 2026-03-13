@@ -6,12 +6,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '/backend/api_requests/api_calls.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import 'form_flow_tokens.dart';
-import 'form_preview_page.dart';
+import 'form_details_page.dart';
 
 // ─── Screen 2 — Search & Results ─────────────────────────────────────────────
 class FormSearchPage extends StatefulWidget {
   final String initialQuery;
-  const FormSearchPage({super.key, this.initialQuery = ''});
+  final String initialCategory;
+  const FormSearchPage({
+    super.key,
+    this.initialQuery = '',
+    this.initialCategory = 'All',
+  });
 
   @override
   State<FormSearchPage> createState() => _FormSearchPageState();
@@ -28,7 +33,7 @@ class _FormSearchPageState extends State<FormSearchPage> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _offset = 0;
-  String _selectedCategory = 'All';
+  late String _selectedCategory;
   List<String> _categories = ['All'];
   bool _categoriesLoading = true;
 
@@ -38,6 +43,7 @@ class _FormSearchPageState extends State<FormSearchPage> {
   void initState() {
     super.initState();
     _searchCtrl = TextEditingController(text: widget.initialQuery);
+    _selectedCategory = widget.initialCategory;
     _scrollCtrl.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocus.requestFocus();
@@ -72,7 +78,7 @@ class _FormSearchPageState extends State<FormSearchPage> {
           .from('template_categories')
           .select('name')
           .or('is_predefined.eq.true,org_id.eq.$orgId')
-          .order('sort_order');
+          .order('sort_order', ascending: true);
       final names = (rows as List)
           .map((r) => r['name'] as String)
           .toList();
@@ -110,12 +116,13 @@ class _FormSearchPageState extends State<FormSearchPage> {
 
     final token = await _freshToken();
     final orgId = FFAppState().currentOrgId;
-    final scope = _selectedCategory == 'All' ? '' : _selectedCategory;
+    final category = _selectedCategory == 'All' ? '' : _selectedCategory;
 
     final response = await SearchInspectionFormTemplatesCall.call(
       pOrg: orgId,
-      pScope: scope,
+      pScope: 'all',
       pQ: _searchCtrl.text.trim(),
+      pCategory: category,
       pLimit: _pageSize,
       pOffset: 0,
       pSortBy: 'created_at',
@@ -148,13 +155,14 @@ class _FormSearchPageState extends State<FormSearchPage> {
 
     final token = await _freshToken();
     final orgId = FFAppState().currentOrgId;
-    final scope = _selectedCategory == 'All' ? '' : _selectedCategory;
+    final category = _selectedCategory == 'All' ? '' : _selectedCategory;
     final nextOffset = _offset + _pageSize;
 
     final response = await SearchInspectionFormTemplatesCall.call(
       pOrg: orgId,
-      pScope: scope,
+      pScope: 'all',
       pQ: _searchCtrl.text.trim(),
+      pCategory: category,
       pLimit: _pageSize,
       pOffset: nextOffset,
       pSortBy: 'created_at',
@@ -296,6 +304,7 @@ class _FormSearchPageState extends State<FormSearchPage> {
                           onTap: () => _selectCategory(cat),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 150),
+                            alignment: Alignment.center,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
@@ -435,6 +444,13 @@ class _FormResultRowState extends State<_FormResultRow>
     final name = form['name'] as String? ?? 'Untitled';
     final category = form['category'] as String?;
     final createdAt = form['created_at'] as String?;
+    final schema = form['schema'];
+    int stepCount = 0;
+    if (schema is Map && schema.containsKey('items')) {
+      stepCount = ((schema['items'] as List?) ?? []).length;
+    } else if (schema is List) {
+      stepCount = schema.length;
+    }
 
     return FadeTransition(
       opacity: _opacity,
@@ -443,7 +459,7 @@ class _FormResultRowState extends State<_FormResultRow>
         child: GestureDetector(
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => FormPreviewPage(form: form),
+              builder: (_) => FormDetailsPage(form: form),
             ),
           ),
           child: Container(
@@ -510,7 +526,7 @@ class _FormResultRowState extends State<_FormResultRow>
                             const SizedBox(width: 6),
                           ],
                           Text(
-                            relativeTime(createdAt),
+                            '$stepCount step${stepCount != 1 ? 's' : ''} · ${relativeTime(createdAt)}',
                             style:
                                 ffStyle(11, FontWeight.w400, kFormSlate4),
                           ),

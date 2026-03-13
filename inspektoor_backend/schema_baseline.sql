@@ -310,6 +310,67 @@ $$;
 ALTER FUNCTION "public"."search_inspection_templates"("p_org" "uuid", "p_scope" "text", "p_q" "text", "p_sort_by" "text", "p_sort_dir" "text", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."search_inspection_templates"("p_org" "uuid", "p_scope" "text", "p_q" "text", "p_category" "text" DEFAULT NULL::"text", "p_sort_by" "text" DEFAULT 'created_at'::"text", "p_sort_dir" "text" DEFAULT 'desc'::"text", "p_limit" integer DEFAULT 25, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "org_id" "uuid", "name" "text", "category" "text", "category_id" "uuid", "schema" "jsonb", "version" integer, "is_active" boolean, "created_at" timestamp with time zone, "is_predefined" boolean, "created_by" "uuid", "creator_first_name" "text", "creator_last_name" "text")
+    LANGUAGE "sql" STABLE
+    AS $$
+  SELECT
+    it.id,
+    it.org_id,
+    it.name,
+    tc.name        AS category,
+    it.category_id,
+    it.schema,
+    it.version,
+    it.is_active,
+    it.created_at,
+    it.is_predefined,
+    it.created_by,
+    au.first_name  AS creator_first_name,
+    au.last_name   AS creator_last_name
+  FROM public.inspection_templates it
+  JOIN public.template_categories tc ON tc.id = it.category_id
+  LEFT JOIN public.app_users au ON au.id = it.created_by
+  WHERE
+    -- org / predefined scope
+    (
+      CASE p_scope
+        WHEN 'org_created' THEN (it.org_id = p_org)
+        WHEN 'predefined'  THEN (it.is_predefined = TRUE)
+        ELSE (it.org_id = p_org OR it.is_predefined = TRUE)
+      END
+    )
+    -- category filter
+    AND (
+      p_category IS NULL
+      OR p_category = ''
+      OR tc.name = p_category
+    )
+    -- full-text search
+    AND (
+      p_q IS NULL
+      OR p_q = ''
+      OR it.name ILIKE '%' || p_q || '%'
+      OR tc.name ILIKE '%' || p_q || '%'
+    )
+  ORDER BY
+    CASE WHEN p_sort_by = 'name'          AND p_sort_dir = 'asc'  THEN it.name          END ASC  NULLS LAST,
+    CASE WHEN p_sort_by = 'name'          AND p_sort_dir = 'desc' THEN it.name          END DESC NULLS LAST,
+    CASE WHEN p_sort_by = 'category'      AND p_sort_dir = 'asc'  THEN tc.name          END ASC  NULLS LAST,
+    CASE WHEN p_sort_by = 'category'      AND p_sort_dir = 'desc' THEN tc.name          END DESC NULLS LAST,
+    CASE WHEN p_sort_by = 'created_at'    AND p_sort_dir = 'asc'  THEN it.created_at    END ASC  NULLS LAST,
+    CASE WHEN p_sort_by = 'created_at'    AND p_sort_dir = 'desc' THEN it.created_at    END DESC NULLS LAST,
+    CASE WHEN p_sort_by = 'is_predefined' AND p_sort_dir = 'asc'  THEN it.is_predefined END ASC  NULLS LAST,
+    CASE WHEN p_sort_by = 'is_predefined' AND p_sort_dir = 'desc' THEN it.is_predefined END DESC NULLS LAST,
+    it.created_at DESC,
+    it.id DESC
+  LIMIT p_limit
+  OFFSET p_offset;
+$$;
+
+
+ALTER FUNCTION "public"."search_inspection_templates"("p_org" "uuid", "p_scope" "text", "p_q" "text", "p_category" "text", "p_sort_by" "text", "p_sort_dir" "text", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."stamp_asset_statuses"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -790,13 +851,13 @@ CREATE TABLE IF NOT EXISTS "public"."inspection_templates" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "org_id" "uuid",
     "name" "text" NOT NULL,
-    "category" "text",
     "schema" "jsonb" NOT NULL,
     "version" integer DEFAULT 1,
     "is_active" boolean DEFAULT true,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "is_predefined" boolean DEFAULT false NOT NULL,
     "created_by" "uuid" DEFAULT "auth"."uid"() NOT NULL,
+    "category_id" "uuid" NOT NULL,
     CONSTRAINT "chk_visibility" CHECK ((("is_predefined" = true) OR ("org_id" IS NOT NULL)))
 );
 
@@ -935,6 +996,20 @@ CREATE TABLE IF NOT EXISTS "public"."subscriptions" (
 
 
 ALTER TABLE "public"."subscriptions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."template_categories" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text",
+    "sort_order" integer DEFAULT 99 NOT NULL,
+    "is_predefined" boolean DEFAULT true NOT NULL,
+    "org_id" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."template_categories" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."users_orgs" (
@@ -1087,8 +1162,18 @@ ALTER TABLE ONLY "public"."subscriptions"
 
 
 
+ALTER TABLE ONLY "public"."template_categories"
+    ADD CONSTRAINT "template_categories_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."inspection_templates"
     ADD CONSTRAINT "templates_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."template_categories"
+    ADD CONSTRAINT "uq_template_category_name_org" UNIQUE NULLS NOT DISTINCT ("name", "org_id");
 
 
 
@@ -1154,11 +1239,11 @@ CREATE INDEX "idx_inspections_org" ON "public"."inspections" USING "btree" ("org
 
 
 
+CREATE INDEX "idx_it_category_id" ON "public"."inspection_templates" USING "btree" ("category_id");
+
+
+
 CREATE INDEX "idx_it_created_at" ON "public"."inspection_templates" USING "btree" ("created_at");
-
-
-
-CREATE INDEX "idx_it_fts" ON "public"."inspection_templates" USING "gin" ("to_tsvector"('"simple"'::"regconfig", ((COALESCE("name", ''::"text") || ' '::"text") || COALESCE("category", ''::"text"))));
 
 
 
@@ -1171,10 +1256,6 @@ CREATE INDEX "idx_it_org_id" ON "public"."inspection_templates" USING "btree" ("
 
 
 CREATE INDEX "idx_it_org_pre" ON "public"."inspection_templates" USING "btree" ("org_id", "is_predefined");
-
-
-
-CREATE INDEX "idx_it_trgm_category" ON "public"."inspection_templates" USING "gin" ("category" "public"."gin_trgm_ops");
 
 
 
@@ -1419,6 +1500,11 @@ ALTER TABLE ONLY "public"."inspection_items"
 
 
 
+ALTER TABLE ONLY "public"."inspection_templates"
+    ADD CONSTRAINT "inspection_templates_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "public"."template_categories"("id");
+
+
+
 ALTER TABLE ONLY "public"."inspections"
     ADD CONSTRAINT "inspections_asset_id_fkey" FOREIGN KEY ("asset_id") REFERENCES "public"."assets"("id") ON DELETE CASCADE;
 
@@ -1456,6 +1542,11 @@ ALTER TABLE ONLY "public"."subscriptions"
 
 ALTER TABLE ONLY "public"."subscriptions"
     ADD CONSTRAINT "subscriptions_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "public"."plans"("id");
+
+
+
+ALTER TABLE ONLY "public"."template_categories"
+    ADD CONSTRAINT "template_categories_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "public"."orgs"("id") ON DELETE CASCADE;
 
 
 
@@ -1617,6 +1708,12 @@ CREATE POLICY "ins_assets" ON "public"."assets" FOR INSERT TO "authenticated" WI
 
 
 CREATE POLICY "insert org templates" ON "public"."inspection_templates" FOR INSERT TO "authenticated" WITH CHECK ((("is_predefined" = false) AND ("org_id" = ((("current_setting"('request.jwt.claims'::"text", true))::"jsonb" ->> 'org_id'::"text"))::"uuid") AND ("created_by" = "auth"."uid"())));
+
+
+
+CREATE POLICY "insert_org_template_categories" ON "public"."template_categories" FOR INSERT WITH CHECK ((("is_predefined" = false) AND ("org_id" IN ( SELECT "users_orgs"."org_id"
+   FROM "public"."users_orgs"
+  WHERE ("users_orgs"."user_id" = "auth"."uid"())))));
 
 
 
@@ -1854,6 +1951,12 @@ CREATE POLICY "read own app_user" ON "public"."app_users" FOR SELECT USING (("au
 
 
 
+CREATE POLICY "read_template_categories" ON "public"."template_categories" FOR SELECT USING ((("is_predefined" = true) OR ("org_id" IN ( SELECT "users_orgs"."org_id"
+   FROM "public"."users_orgs"
+  WHERE ("users_orgs"."user_id" = "auth"."uid"())))));
+
+
+
 ALTER TABLE "public"."roles" ENABLE ROW LEVEL SECURITY;
 
 
@@ -1885,6 +1988,9 @@ CREATE POLICY "select_visible_templates" ON "public"."inspection_templates" FOR 
 
 
 ALTER TABLE "public"."subscriptions" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."template_categories" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "upd_assets" ON "public"."assets" FOR UPDATE TO "authenticated" USING (("org_id" = "app"."org_id"())) WITH CHECK (("org_id" = "app"."org_id"()));
@@ -2265,6 +2371,12 @@ GRANT ALL ON FUNCTION "public"."search_inspection_templates"("p_org" "uuid", "p_
 
 
 
+GRANT ALL ON FUNCTION "public"."search_inspection_templates"("p_org" "uuid", "p_scope" "text", "p_q" "text", "p_category" "text", "p_sort_by" "text", "p_sort_dir" "text", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."search_inspection_templates"("p_org" "uuid", "p_scope" "text", "p_q" "text", "p_category" "text", "p_sort_by" "text", "p_sort_dir" "text", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."search_inspection_templates"("p_org" "uuid", "p_scope" "text", "p_q" "text", "p_category" "text", "p_sort_by" "text", "p_sort_dir" "text", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."set_limit"(real) TO "postgres";
 GRANT ALL ON FUNCTION "public"."set_limit"(real) TO "anon";
 GRANT ALL ON FUNCTION "public"."set_limit"(real) TO "authenticated";
@@ -2569,6 +2681,12 @@ GRANT ALL ON TABLE "public"."roles" TO "service_role";
 GRANT ALL ON TABLE "public"."subscriptions" TO "anon";
 GRANT ALL ON TABLE "public"."subscriptions" TO "authenticated";
 GRANT ALL ON TABLE "public"."subscriptions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."template_categories" TO "anon";
+GRANT ALL ON TABLE "public"."template_categories" TO "authenticated";
+GRANT ALL ON TABLE "public"."template_categories" TO "service_role";
 
 
 

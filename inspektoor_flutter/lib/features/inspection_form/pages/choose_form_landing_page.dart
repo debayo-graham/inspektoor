@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'form_flow_tokens.dart';
 import 'form_search_page.dart';
 import '/pages/inspection_forms/create_inspection_form_page/create_inspection_form_page_widget.dart';
 
 // ─── Screen 1 — Landing ───────────────────────────────────────────────────────
-///
-/// Entry point for the "Use Existing Form" flow.
-/// Two paths: browse existing templates or build a new one from scratch.
 class ChooseFormLandingPage extends StatefulWidget {
   const ChooseFormLandingPage({super.key});
 
-  // Keep the same route identity as the old FlutterFlow page so nav.dart
-  // can swap the builder without touching route names.
   static const String routeName = 'ChooseInspectionFormPage';
   static const String routePath = '/chooseInspectionFormPage';
 
@@ -22,6 +18,14 @@ class ChooseFormLandingPage extends StatefulWidget {
 
 class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
   final TextEditingController _searchCtrl = TextEditingController();
+  List<String> _categories = [];
+  bool _categoriesLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
 
   @override
   void dispose() {
@@ -29,10 +33,33 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
     super.dispose();
   }
 
-  void _openSearch() {
+  Future<void> _fetchCategories() async {
+    try {
+      final rows = await Supabase.instance.client
+          .from('template_categories')
+          .select('name')
+          .eq('is_predefined', true)
+          .order('sort_order', ascending: true);
+      final names =
+          (rows as List).map((r) => r['name'] as String).toList();
+      if (mounted) {
+        setState(() {
+          _categories = ['All', ...names];
+          _categoriesLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _categoriesLoading = false);
+    }
+  }
+
+  void _openSearch({String category = 'All'}) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => FormSearchPage(initialQuery: _searchCtrl.text.trim()),
+        builder: (_) => FormSearchPage(
+          initialQuery: _searchCtrl.text.trim(),
+          initialCategory: category,
+        ),
       ),
     );
   }
@@ -58,7 +85,7 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 36), // balance back button
+                  const SizedBox(width: 36),
                 ],
               ),
             ),
@@ -80,7 +107,10 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
                     // ── Use Existing card ─────────────────────────────────
                     _UseExistingCard(
                       searchCtrl: _searchCtrl,
-                      onBrowse: _openSearch,
+                      categories: _categories,
+                      categoriesLoading: _categoriesLoading,
+                      onBrowse: () => _openSearch(),
+                      onCategoryTap: (cat) => _openSearch(category: cat),
                     ),
 
                     // ── or divider ────────────────────────────────────────
@@ -113,8 +143,7 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          border:
-                              Border.all(color: kFormBorder, width: 2),
+                          border: Border.all(color: kFormBorder, width: 2),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
@@ -146,17 +175,16 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text('Build New Form',
-                                      style: ffStyle(15, FontWeight.w800,
-                                          kFormSlate8)),
+                                      style: ffStyle(
+                                          15, FontWeight.w800, kFormSlate8)),
                                   const SizedBox(height: 2),
                                   Text(
                                       'Create a custom checklist from scratch',
-                                      style: ffStyle(12, FontWeight.w400,
-                                          kFormSlate4)),
+                                      style: ffStyle(
+                                          12, FontWeight.w400, kFormSlate4)),
                                 ],
                               ),
                             ),
@@ -180,11 +208,17 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
 // ─── Use Existing card ────────────────────────────────────────────────────────
 class _UseExistingCard extends StatelessWidget {
   final TextEditingController searchCtrl;
+  final List<String> categories;
+  final bool categoriesLoading;
   final VoidCallback onBrowse;
+  final ValueChanged<String> onCategoryTap;
 
   const _UseExistingCard({
     required this.searchCtrl,
+    required this.categories,
+    required this.categoriesLoading,
     required this.onBrowse,
+    required this.onCategoryTap,
   });
 
   @override
@@ -262,8 +296,7 @@ class _UseExistingCard extends StatelessWidget {
                           const SizedBox(height: 3),
                           Text(
                             "Pick from a form that's already been configured",
-                            style:
-                                ffStyle(12, FontWeight.w400, kFormSlate4),
+                            style: ffStyle(12, FontWeight.w400, kFormSlate4),
                           ),
                         ],
                       ),
@@ -272,7 +305,7 @@ class _UseExistingCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
 
-                // Search bar (interactive — submits to FormSearchPage)
+                // Search bar (interactive)
                 Container(
                   decoration: BoxDecoration(
                     color: kFormBg,
@@ -292,7 +325,8 @@ class _UseExistingCard extends StatelessWidget {
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Search inspection forms…',
-                            hintStyle: ffStyle(13, FontWeight.w400, kFormSlate4),
+                            hintStyle:
+                                ffStyle(13, FontWeight.w400, kFormSlate4),
                             isDense: true,
                             contentPadding:
                                 const EdgeInsets.symmetric(vertical: 12),
@@ -307,12 +341,32 @@ class _UseExistingCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Quick filter chips
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: ['Pre-Trip', 'Safety', 'Monthly']
-                      .map((t) => Container(
+                // Category chips — horizontal scroll, loaded from DB
+                if (categoriesLoading)
+                  const SizedBox(
+                    height: 30,
+                    child: Center(
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            color: kFormBlue, strokeWidth: 2),
+                      ),
+                    ),
+                  )
+                else if (categories.isNotEmpty)
+                  SizedBox(
+                    height: 32,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categories.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (_, i) {
+                        final cat = categories[i];
+                        return GestureDetector(
+                          onTap: () => onCategoryTap(cat),
+                          child: Container(
+                            alignment: Alignment.center,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
@@ -321,12 +375,14 @@ class _UseExistingCard extends StatelessWidget {
                                   color: const Color(0xFFBAE6FD)),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text(t,
-                                style: ffStyle(
-                                    11, FontWeight.w600, kFormBlue)),
-                          ))
-                      .toList(),
-                ),
+                            child: Text(cat,
+                                style:
+                                    ffStyle(11, FontWeight.w600, kFormBlue)),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
               ],
             ),
           ),
@@ -351,8 +407,7 @@ class _UseExistingCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text('Browse & Select',
-                      style:
-                          ffStyle(14, FontWeight.w700, Colors.white)),
+                      style: ffStyle(14, FontWeight.w700, Colors.white)),
                   const SizedBox(width: 8),
                   const Icon(Icons.arrow_forward_rounded,
                       color: Colors.white, size: 16),

@@ -5,7 +5,7 @@ import 'form_search_page.dart';
 
 // ─── Screen 4 — Confirmed ─────────────────────────────────────────────────────
 ///
-/// Shown after the user taps "Use This Form" on [FormPreviewPage].
+/// Shown after the user taps "Use This Form" on [FormDetailsPage].
 /// Animated green checkmark, form summary, and two CTAs:
 ///   • Start Inspection — proceeds to the inspection flow (wiring TBD)
 ///   • Change Form      — pops back to [FormSearchPage]
