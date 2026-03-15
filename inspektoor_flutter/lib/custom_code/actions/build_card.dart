@@ -52,6 +52,7 @@ Future<dynamic> buildCard(
   List<dynamic>? examples,
   String? maxLength,
   String? regex,
+  bool? isRequired,
 ) async {
   final bool hasIncomingMap = incomingItem is Map;
 
@@ -171,6 +172,7 @@ Future<dynamic> buildCard(
     "type": type,
     "label": label,
     "icon": iconStr.isEmpty ? null : iconStr,
+    "required": isRequired ?? true,
     "config": config,
   };
 

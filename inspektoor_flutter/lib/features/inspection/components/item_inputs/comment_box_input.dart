@@ -119,7 +119,7 @@ class _InspectionCommentBoxInputState extends State<InspectionCommentBoxInput> {
                   Text(
                     'OCR enabled',
                     style: inspInterStyle(
-                        9, FontWeight.w800, const Color(0xFF16A34A)),
+                        12, FontWeight.w800, const Color(0xFF16A34A)),
                   ),
                 ],
               ),
@@ -159,7 +159,7 @@ class _InspectionCommentBoxInputState extends State<InspectionCommentBoxInput> {
                   child: Text(
                     'Scanned from image',
                     style: inspInterStyle(
-                        10, FontWeight.w600, const Color(0xFF94A3B8)),
+                        12, FontWeight.w600, const Color(0xFF94A3B8)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -181,7 +181,7 @@ class _InspectionCommentBoxInputState extends State<InspectionCommentBoxInput> {
                         Text(
                           'Rescan',
                           style: inspInterStyle(
-                              10, FontWeight.w700, const Color(0xFF64748B)),
+                              12, FontWeight.w700, const Color(0xFF64748B)),
                         ),
                       ],
                     ),
@@ -311,7 +311,7 @@ class _InspectionCommentBoxInputState extends State<InspectionCommentBoxInput> {
                 children: [
                   Text(
                     '$_charCount/$_maxChars',
-                    style: inspInterStyle(10, FontWeight.w600, _countColor),
+                    style: inspInterStyle(12, FontWeight.w600, _countColor),
                   ),
                   const SizedBox(width: 4),
                   CustomPaint(
@@ -334,7 +334,7 @@ class _InspectionCommentBoxInputState extends State<InspectionCommentBoxInput> {
           Text(
             'Tap camera to scan and auto-fill value',
             textAlign: TextAlign.center,
-            style: inspInterStyle(10, FontWeight.w400, const Color(0xFF94A3B8)),
+            style: inspInterStyle(12, FontWeight.w400, const Color(0xFF94A3B8)),
           ),
         ],
         const SizedBox(height: 16),
@@ -343,7 +343,7 @@ class _InspectionCommentBoxInputState extends State<InspectionCommentBoxInput> {
         if (widget.quickFills.isNotEmpty) ...[
           Text(
             'QUICK FILL',
-            style: inspInterStyle(10, FontWeight.w700, const Color(0xFF94A3B8))
+            style: inspInterStyle(12, FontWeight.w700, const Color(0xFF94A3B8))
                 .copyWith(letterSpacing: 0.8),
           ),
           const SizedBox(height: 8),
@@ -380,7 +380,7 @@ class _InspectionCommentBoxInputState extends State<InspectionCommentBoxInput> {
                   child: Text(
                     chip,
                     style: inspInterStyle(
-                      11,
+                      12,
                       FontWeight.w600,
                       selected
                           ? const Color(0xFF0EA5E9)

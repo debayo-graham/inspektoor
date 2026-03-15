@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '/backend/api_requests/api_calls.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/features/inspection_form/components/form_flow_step_bar.dart';
+import '/pages/dashboard/home_page/home_page_widget.dart';
 import 'form_flow_tokens.dart';
 import 'form_details_page.dart';
 
@@ -200,26 +202,20 @@ class _FormSearchPageState extends State<FormSearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── App bar ──────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                children: [
-                  const FormFlowBackButton(),
-                  Expanded(
-                    child: Center(
-                      child: Text('Select Form',
-                          style: ffStyle(17, FontWeight.w800, kFormSlate8)),
-                    ),
-                  ),
-                  const SizedBox(width: 36),
-                ],
-              ),
-            ),
+      body: Column(
+        children: [
+          FormFlowStepBar(
+            currentStepIndex: 1,
+            onBack: () => Navigator.of(context).pop(),
+            onClose: () => Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst),
+          ),
 
+          // ── Content ────────────────────────────────────────────────────
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
             // ── Search bar ───────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -370,8 +366,11 @@ class _FormSearchPageState extends State<FormSearchPage> {
                           },
                         ),
             ),
-          ],
-        ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

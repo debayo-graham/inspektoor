@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '/app_state.dart';
 import '../../../../common/components/photo_viewer_screen.dart';
@@ -78,10 +79,28 @@ class InspectionSummaryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Compute skipped set so stats exclude them.
+    final skippedKeys = <String>{};
+    for (final tItem in templateItems) {
+      final key = tItem['key'] as String? ?? '';
+      final cache = answerCache[key] ?? const {};
+      final answered = _answeredFor(key);
+      final vals = answered != null
+          ? (answered['values'] as List? ?? [])
+          : <dynamic>[];
+      if (cache['skipped'] == true ||
+          vals.any((v) => v is Map && v['value'] == 'skipped')) {
+        skippedKeys.add(key);
+      }
+    }
+    final skippedCount = skippedKeys.length;
     final total = templateItems.length;
-    final defectCount = defectMap.values.where((v) => v).length;
-    final passCount = defectMap.values.where((v) => !v).length;
-    final passRate = total > 0 ? (passCount / total * 100).round() : 0;
+    final assessed = total - skippedCount;
+    final defectCount = defectMap.entries
+        .where((e) => e.value && !skippedKeys.contains(e.key))
+        .length;
+    final passCount = assessed - defectCount;
+    final passRate = assessed > 0 ? (passCount / assessed * 100).round() : 0;
 
     return ColoredBox(
       color: const Color(0xFFF8FAFC),
@@ -98,6 +117,7 @@ class InspectionSummaryView extends StatelessWidget {
                   total: total,
                   passCount: passCount,
                   defectCount: defectCount,
+                  skippedCount: skippedCount,
                   passRate: passRate,
                   startedAt: startedAt,
                   completedAt: completedAt,
@@ -119,6 +139,21 @@ class InspectionSummaryView extends StatelessWidget {
                       : <dynamic>[];
                   final cache = answerCache[key] ?? const {};
                   final stepNum = i + 1;
+
+                  // Detect skipped items (cache flag or sentinel value row).
+                  final isSkipped = cache['skipped'] == true ||
+                      values.any((v) =>
+                          v is Map && v['value'] == 'skipped');
+
+                  if (isSkipped) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _SkippedCard(
+                        stepNum: stepNum,
+                        label: label,
+                      ),
+                    );
+                  }
 
                   final Widget card;
                   switch (type) {
@@ -286,6 +321,7 @@ class _VerdictCard extends StatelessWidget {
   final int total;
   final int passCount;
   final int defectCount;
+  final int skippedCount;
   final int passRate;
   final DateTime? startedAt;
   final DateTime? completedAt;
@@ -294,6 +330,7 @@ class _VerdictCard extends StatelessWidget {
     required this.total,
     required this.passCount,
     required this.defectCount,
+    this.skippedCount = 0,
     required this.passRate,
     this.startedAt,
     this.completedAt,
@@ -351,13 +388,29 @@ class _VerdictCard extends StatelessWidget {
                       Text(
                         _formatDuration(duration),
                         style: inspInterStyle(
-                            12, FontWeight.w600, const Color(0xFF0284C7)),
+                            13, FontWeight.w600, const Color(0xFF0284C7)),
                       ),
                     ],
                   ),
                 ),
             ],
           ),
+          // ── Date / time row ──────────────────────────────────────────
+          if (completedAt != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined,
+                    size: 16, color: Color(0xFF64748B)),
+                const SizedBox(width: 6),
+                Text(
+                  DateFormat.yMMMd().add_jm().format(completedAt!.toLocal()),
+                  style: inspInterStyle(
+                      14, FontWeight.w500, const Color(0xFF64748B)),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           // Stats row
           Row(
@@ -377,6 +430,16 @@ class _VerdictCard extends StatelessWidget {
                 border: const Color(0xFFFECACA),
                 color: const Color(0xFFDC2626),
               ),
+              if (skippedCount > 0) ...[
+                const SizedBox(width: 8),
+                _StatBox(
+                  count: skippedCount,
+                  label: 'Skipped',
+                  bg: const Color(0xFFF8FAFC),
+                  border: kInspBorder,
+                  color: const Color(0xFF94A3B8),
+                ),
+              ],
               const SizedBox(width: 8),
               _StatBox(
                 count: total,
@@ -397,7 +460,9 @@ class _VerdictCard extends StatelessWidget {
                 children: [
                   Container(color: const Color(0xFFF1F5F9)),
                   FractionallySizedBox(
-                    widthFactor: total > 0 ? passCount / total : 0,
+                    widthFactor: (total - skippedCount) > 0
+                        ? passCount / (total - skippedCount)
+                        : 0,
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981),
@@ -415,7 +480,7 @@ class _VerdictCard extends StatelessWidget {
             child: Text(
               '$passRate% pass rate',
               style: inspInterStyle(
-                  10, FontWeight.w500, const Color(0xFF94A3B8)),
+                  12, FontWeight.w500, const Color(0xFF94A3B8)),
             ),
           ),
         ],
@@ -456,7 +521,7 @@ class _StatBox extends StatelessWidget {
             const SizedBox(height: 2),
             Text(label,
                 style: inspInterStyle(
-                    9, FontWeight.w600, color.withValues(alpha: 0.6))),
+                    12, FontWeight.w600, color.withValues(alpha: 0.6))),
           ],
         ),
       ),
@@ -535,13 +600,13 @@ class _NumericCard extends StatelessWidget {
                       child: Text(
                         '$label${rangeStr.isNotEmpty ? ' · ' : ''}',
                         style: inspInterStyle(
-                            11, FontWeight.w500, const Color(0xFF94A3B8)),
+                            12, FontWeight.w500, const Color(0xFF94A3B8)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (rangeStr.isNotEmpty)
                       Text(rangeStr,
-                          style: inspInterStyle(11, FontWeight.w500,
+                          style: inspInterStyle(12, FontWeight.w500,
                               const Color(0xFF38BDF8))),
                   ],
                 ),
@@ -577,7 +642,7 @@ class _NumericCard extends StatelessWidget {
               child: Text(
                 inRange ? 'In range' : 'Out of range',
                 style: inspInterStyle(
-                  10,
+                  12,
                   FontWeight.w600,
                   inRange
                       ? const Color(0xFF16A34A)
@@ -631,7 +696,7 @@ class _AlphanumericCard extends StatelessWidget {
               children: [
                 Text(label,
                     style: inspInterStyle(
-                        11, FontWeight.w500, const Color(0xFF94A3B8))),
+                        12, FontWeight.w500, const Color(0xFF94A3B8))),
                 const SizedBox(height: 2),
                 Text(
                   raw.isNotEmpty ? raw : '—',
@@ -656,7 +721,7 @@ class _AlphanumericCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text('Scanned',
                       style: inspInterStyle(
-                          10, FontWeight.w600, const Color(0xFF0EA5E9))),
+                          12, FontWeight.w600, const Color(0xFF0EA5E9))),
                 ],
               ),
             ),
@@ -704,7 +769,7 @@ class _CommentCard extends StatelessWidget {
               children: [
                 Text(label,
                     style: inspInterStyle(
-                        11, FontWeight.w500, const Color(0xFF94A3B8))),
+                        12, FontWeight.w500, const Color(0xFF94A3B8))),
                 const SizedBox(height: 4),
                 Text(
                   raw.isNotEmpty ? raw : '—',
@@ -813,7 +878,7 @@ class _MultiCheckCardState extends State<_MultiCheckCard> {
                         Text(
                           '$passItemCount passed${failCount > 0 ? ', $failCount failed' : ''} · ${checks.length} items',
                           style: inspInterStyle(
-                              11, FontWeight.w500, const Color(0xFF94A3B8)),
+                              12, FontWeight.w500, const Color(0xFF94A3B8)),
                         ),
                       ],
                     ),
@@ -833,7 +898,7 @@ class _MultiCheckCardState extends State<_MultiCheckCard> {
                           ? 'All passed'
                           : '$failCount issue${failCount > 1 ? 's' : ''}',
                       style: inspInterStyle(
-                        11,
+                        12,
                         FontWeight.w600,
                         stepOk
                             ? const Color(0xFF10B981)
@@ -986,7 +1051,7 @@ class _SingleCheckCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(subLabel,
                       style: inspInterStyle(
-                          11, FontWeight.w500, const Color(0xFF94A3B8))),
+                          12, FontWeight.w500, const Color(0xFF94A3B8))),
                 ],
               ],
             ),
@@ -1130,7 +1195,7 @@ class _PhotoCard extends StatelessWidget {
                         Text(
                           '${images.length} photo${images.length == 1 ? '' : 's'}',
                           style: inspInterStyle(
-                              11, FontWeight.w500, const Color(0xFF94A3B8)),
+                              12, FontWeight.w500, const Color(0xFF94A3B8)),
                         ),
                       ],
                     ),
@@ -1228,7 +1293,7 @@ class _SignatureCard extends StatelessWidget {
                               Text(
                                   'Signed by ${inspectorName!.isNotEmpty ? inspectorName : 'Unknown'}',
                                   style: inspInterStyle(
-                                      11, FontWeight.w500, const Color(0xFF94A3B8))),
+                                      12, FontWeight.w500, const Color(0xFF94A3B8))),
                               ],
                             ],
                           ),
@@ -1258,7 +1323,7 @@ class _SignatureCard extends StatelessWidget {
                               const SizedBox(width: 5),
                               Text('Signed',
                                   style: inspInterStyle(
-                                      11, FontWeight.w700, const Color(0xFF059669))),
+                                      12, FontWeight.w700, const Color(0xFF059669))),
                             ],
                           ),
                         ),
@@ -1293,7 +1358,7 @@ class _SignatureCard extends StatelessWidget {
                               child: Text(
                                 'SIGNATURE',
                                 style: inspInterStyle(
-                                        9, FontWeight.w700, const Color(0xFFCBD5E1))
+                                        12, FontWeight.w700, const Color(0xFFCBD5E1))
                                     .copyWith(letterSpacing: 1.2),
                               ),
                             ),
@@ -1358,6 +1423,44 @@ class _SignatureCard extends StatelessWidget {
 // ═════════════════════════════════════════════════════════════════════════════
 // GENERIC CARD — fallback for unknown types
 // ═════════════════════════════════════════════════════════════════════════════
+
+class _SkippedCard extends StatelessWidget {
+  final int stepNum;
+  final String label;
+
+  const _SkippedCard({required this.stepNum, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      child: Row(
+        children: [
+          _StepBadge(
+            stepNumber: stepNum,
+            bg: const Color(0xFFF1F5F9),
+            color: const Color(0xFF94A3B8),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(label,
+                style: inspInterStyle(
+                    14, FontWeight.w700, const Color(0xFF94A3B8))),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text('Skipped',
+                style: inspInterStyle(
+                    13, FontWeight.w600, const Color(0xFF94A3B8))),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _GenericCard extends StatelessWidget {
   final int stepNum;
@@ -1462,7 +1565,7 @@ class _StepBadge extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text('$stepNumber',
-          style: inspInterStyle(12, FontWeight.w700, color)),
+          style: inspInterStyle(13, FontWeight.w700, color)),
     );
   }
 }
@@ -1483,7 +1586,7 @@ class _PassFailPill extends StatelessWidget {
       child: Text(
         pass ? 'Pass' : 'Fail',
         style: inspInterStyle(
-          10,
+          12,
           FontWeight.w800,
           pass ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
         ),
@@ -1538,7 +1641,7 @@ class _EvidenceBlock extends StatelessWidget {
                   Text(
                     'NOTE',
                     style: inspInterStyle(
-                            9, FontWeight.w700, const Color(0xFF94A3B8))
+                            12, FontWeight.w700, const Color(0xFF94A3B8))
                         .copyWith(letterSpacing: 1.2),
                   ),
                   const SizedBox(height: 4),

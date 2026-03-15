@@ -160,7 +160,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
               Text(
                 'OCR enabled',
                 style: inspInterStyle(
-                    9, FontWeight.w800, const Color(0xFF16A34A)),
+                    12, FontWeight.w800, const Color(0xFF16A34A)),
               ),
             ],
           ),
@@ -184,7 +184,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
               child: Text(
                 'Acceptable range: $_rangeLabel${widget.unit != null ? ' ${widget.unit}' : ''}',
                 style: inspInterStyle(
-                    11, FontWeight.w600, const Color(0xFF0284C7)),
+                    12, FontWeight.w600, const Color(0xFF0284C7)),
               ),
             ),
           ],
@@ -253,7 +253,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                     ? Text(
                         '✓ Within range',
                         textAlign: TextAlign.center,
-                        style: inspInterStyle(11, FontWeight.w700, kInspSuccess),
+                        style: inspInterStyle(12, FontWeight.w700, kInspSuccess),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -264,7 +264,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                           Text(
                             'Out of acceptable range',
                             style: inspInterStyle(
-                                11, FontWeight.w700, const Color(0xFFFCA5A5)),
+                                12, FontWeight.w700, const Color(0xFFFCA5A5)),
                           ),
                         ],
                       ),
@@ -392,7 +392,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                 'Tap camera to scan and auto-fill value',
                 textAlign: TextAlign.center,
                 style: inspInterStyle(
-                    10, FontWeight.w400, const Color(0xFF94A3B8)),
+                    12, FontWeight.w400, const Color(0xFF94A3B8)),
               ),
             ],
           ],
@@ -430,7 +430,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
               child: Text(
                 'Scanned from image',
                 style: inspInterStyle(
-                    10, FontWeight.w600, const Color(0xFF94A3B8)),
+                    12, FontWeight.w600, const Color(0xFF94A3B8)),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -452,7 +452,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                     Text(
                       'Rescan',
                       style: inspInterStyle(
-                          10, FontWeight.w700, const Color(0xFF64748B)),
+                          12, FontWeight.w700, const Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -500,7 +500,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                   Text(
                     'OCR enabled',
                     style: inspInterStyle(
-                        9, FontWeight.w800, const Color(0xFF16A34A)),
+                        12, FontWeight.w800, const Color(0xFF16A34A)),
                   ),
                 ],
               ),
@@ -528,7 +528,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                   child: Text(
                     'Acceptable range: $_rangeLabel${widget.unit != null ? ' ${widget.unit}' : ''}',
                     style: inspInterStyle(
-                        11, FontWeight.w600, const Color(0xFF0284C7)),
+                        12, FontWeight.w600, const Color(0xFF0284C7)),
                   ),
                 ),
               ],
@@ -597,7 +597,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                       ? Text(
                           '✓ Within range',
                           textAlign: TextAlign.center,
-                          style: inspInterStyle(11, FontWeight.w700, kInspSuccess),
+                          style: inspInterStyle(12, FontWeight.w700, kInspSuccess),
                         )
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -608,7 +608,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                             Text(
                               'Out of acceptable range',
                               style: inspInterStyle(
-                                  11, FontWeight.w700, const Color(0xFFFCA5A5)),
+                                  12, FontWeight.w700, const Color(0xFFFCA5A5)),
                             ),
                           ],
                         ),
@@ -651,7 +651,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                   child: Text(
                     'Scanned from image',
                     style: inspInterStyle(
-                        10, FontWeight.w600, const Color(0xFF94A3B8)),
+                        12, FontWeight.w600, const Color(0xFF94A3B8)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -674,7 +674,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
                         Text(
                           'Rescan',
                           style: inspInterStyle(
-                              10, FontWeight.w700, const Color(0xFF64748B)),
+                              12, FontWeight.w700, const Color(0xFF64748B)),
                         ),
                       ],
                     ),
@@ -808,7 +808,7 @@ class _InspectionNumericInputState extends State<InspectionNumericInput> {
           Text(
             'Tap camera to scan and auto-fill value',
             textAlign: TextAlign.center,
-            style: inspInterStyle(10, FontWeight.w400, const Color(0xFF94A3B8)),
+            style: inspInterStyle(12, FontWeight.w400, const Color(0xFF94A3B8)),
           ),
         ],
       ],

@@ -65,7 +65,7 @@ class InspectionProgressHeader extends StatelessWidget {
             children: [
               Text(
                 'Step ${step + 1} of $total',
-                style: inspInterStyle(12, FontWeight.w500, kInspSecText),
+                style: inspInterStyle(13, FontWeight.w500, kInspSecText),
               ),
               if (defects > 0)
                 Container(
@@ -77,7 +77,7 @@ class InspectionProgressHeader extends StatelessWidget {
                   ),
                   child: Text(
                     '$defects defect${defects == 1 ? '' : 's'}',
-                    style: inspInterStyle(11, FontWeight.w600, kInspError),
+                    style: inspInterStyle(12, FontWeight.w600, kInspError),
                   ),
                 ),
             ],

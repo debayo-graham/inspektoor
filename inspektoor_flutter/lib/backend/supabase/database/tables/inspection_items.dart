@@ -48,4 +48,7 @@ class InspectionItemsRow extends SupabaseDataRow {
 
   String? get updatedBy => getField<String>('updated_by');
   set updatedBy(String? value) => setField<String>('updated_by', value);
+
+  String get status => getField<String>('status')!;
+  set status(String value) => setField<String>('status', value);
 }

@@ -150,7 +150,7 @@ class _InspectionSignaturePadState extends State<InspectionSignaturePad> {
         children: [
           Text('INSPECTOR',
               style: inspInterStyle(
-                      10, FontWeight.w700, const Color(0xFF94A3B8))
+                      12, FontWeight.w700, const Color(0xFF94A3B8))
                   .copyWith(letterSpacing: 1.0)),
           const SizedBox(height: 4),
           Text(
@@ -162,7 +162,7 @@ class _InspectionSignaturePadState extends State<InspectionSignaturePad> {
           const SizedBox(height: 16),
           Text('DATE',
               style: inspInterStyle(
-                      10, FontWeight.w700, const Color(0xFF94A3B8))
+                      12, FontWeight.w700, const Color(0xFF94A3B8))
                   .copyWith(letterSpacing: 1.0)),
           const SizedBox(height: 4),
           Text(dateStr,
@@ -170,7 +170,7 @@ class _InspectionSignaturePadState extends State<InspectionSignaturePad> {
           const SizedBox(height: 16),
           Text(
             'By signing, you confirm that the inspection has been completed accurately.',
-            style: inspInterStyle(11, FontWeight.w400, const Color(0xFF94A3B8)),
+            style: inspInterStyle(13, FontWeight.w400, const Color(0xFF94A3B8)),
           ),
         ],
       ),
@@ -278,7 +278,7 @@ class _InspectionSignaturePadState extends State<InspectionSignaturePad> {
                 child: Text(
                   'Sign here',
                   style: inspInterStyle(
-                      10, FontWeight.w500, kInspSecText.withValues(alpha: 0.35)),
+                      12, FontWeight.w500, kInspSecText.withValues(alpha: 0.35)),
                 ),
               ),
               // Placeholder hint (before first stroke)
@@ -330,7 +330,7 @@ class _InspectionSignaturePadState extends State<InspectionSignaturePad> {
                     const SizedBox(width: 5),
                     Text('Clear',
                         style:
-                            inspInterStyle(12, FontWeight.w600, kInspSecText)),
+                            inspInterStyle(13, FontWeight.w600, kInspSecText)),
                   ],
                 ),
               ),
@@ -376,7 +376,7 @@ class _InspectionSignaturePadState extends State<InspectionSignaturePad> {
                     Text(
                       'Save signature',
                       style: inspInterStyle(
-                        12,
+                        13,
                         FontWeight.w700,
                         _hasStrokes ? Colors.white : kInspSecText,
                       ),
@@ -453,7 +453,7 @@ class _InspectionSignaturePadState extends State<InspectionSignaturePad> {
                     Text(
                       'Signature captured',
                       style: inspInterStyle(
-                          12, FontWeight.w700, const Color(0xFF047857)),
+                          13, FontWeight.w700, const Color(0xFF047857)),
                     ),
                   ],
                 ),
@@ -475,7 +475,7 @@ class _InspectionSignaturePadState extends State<InspectionSignaturePad> {
               Text(
                 'Re-sign',
                 style: inspInterStyle(
-                    12, FontWeight.w600, kInspSecText.withValues(alpha: 0.6)),
+                    13, FontWeight.w600, kInspSecText.withValues(alpha: 0.6)),
               ),
             ],
           ),

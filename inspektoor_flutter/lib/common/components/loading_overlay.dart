@@ -126,7 +126,7 @@ class _LoadingOverlayContentState extends State<_LoadingOverlayContent>
             // ── Blurred dark backdrop ───────────────────────────────────
             Positioned.fill(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
                 child: Container(color: Colors.black.withValues(alpha: 0.4)),
               ),
             ),

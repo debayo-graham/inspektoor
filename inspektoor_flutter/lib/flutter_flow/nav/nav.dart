@@ -18,6 +18,7 @@ import 'serialization_util.dart';
 
 import '/index.dart';
 import '/features/inspection_form/pages/choose_form_landing_page.dart';
+import '/features/asset_selection/pages/select_asset_page.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -232,6 +233,11 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: InspectAssetWidget.routeName,
           path: InspectAssetWidget.routePath,
           builder: (context, params) => InspectAssetWidget(),
+        ),
+        FFRoute(
+          name: SelectAssetPage.routeName,
+          path: SelectAssetPage.routePath,
+          builder: (context, params) => const SelectAssetPage(),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
     );

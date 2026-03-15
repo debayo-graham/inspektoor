@@ -8,6 +8,8 @@ import '/common/components/loading_overlay.dart';
 import '/custom_code/actions/add_or_update_item_value.dart';
 import '/custom_code/actions/ca_submit_inspection.dart';
 import '/custom_code/actions/undo_last_step.dart';
+import '/features/asset_selection/pages/select_asset_page.dart';
+import '/flutter_flow/flutter_flow_util.dart';
 import 'inspection_session.dart';
 import 'inspection_tokens.dart';
 import 'components/inspection_item_step.dart';
@@ -53,6 +55,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
   // Tablet: notifiers for sidebar ↔ step widget communication.
   final ValueNotifier<bool> _canNextNotifier = ValueNotifier(false);
   final ValueNotifier<VoidCallback?> _handleNextNotifier = ValueNotifier(null);
+  final ValueNotifier<VoidCallback?> _handleSkipNotifier = ValueNotifier(null);
 
   void _reportInteraction() {
     if (_interactionReported) return;
@@ -75,6 +78,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
   void dispose() {
     _canNextNotifier.dispose();
     _handleNextNotifier.dispose();
+    _handleSkipNotifier.dispose();
     super.dispose();
   }
 
@@ -165,7 +169,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
           FFAppState().currentInspectionIndex = 0;
         });
         widget.onSubmitted?.call();
-        Navigator.of(context).pop();
+        context.goNamed(SelectAssetPage.routeName);
       } else {
         final error = result['error'] as String? ?? 'Submission failed.';
         ScaffoldMessenger.of(context).showSnackBar(
@@ -244,6 +248,13 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
     Map<String, dynamic> item,
     Map<String, dynamic> cache,
   ) {
+    // Skipped items auto-resubmit as skipped when jumping forward.
+    if (cache['skipped'] == true) {
+      return [
+        {'key': 'skipped', 'label': 'Skipped', 'value': 'skipped', '_skipped': true}
+      ];
+    }
+
     final type = item['type'] as String? ?? '';
     final cfg = Map<String, dynamic>.from(item['config'] as Map? ?? {});
 
@@ -378,6 +389,27 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
     }
   }
 
+  // ── Skipped step detection ───────────────────────────────────────────────
+
+  Set<int> _resolveSkippedSet() {
+    final skipped = <int>{};
+    try {
+      final draft =
+          json.decode(FFAppState().inspectionDraftJson) as Map<String, dynamic>?;
+      final values = draft?['item_values'] as List? ?? [];
+      for (final v in values.whereType<Map>()) {
+        final itemKey = v['template_item_key'] as String?;
+        if (itemKey == null) continue;
+        final vals = v['values'] as List? ?? [];
+        if (vals.any((e) => e is Map && e['value'] == 'skipped')) {
+          final idx = _items.indexWhere((i) => i['key'] == itemKey);
+          if (idx >= 0) skipped.add(idx);
+        }
+      }
+    } catch (_) {}
+    return skipped;
+  }
+
   // ── Shared state resolution ──────────────────────────────────────────────
 
   Map<int, Map<String, String>> _resolveSubValues() {
@@ -486,6 +518,7 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
       isTablet: isTablet,
       canNextNotifier: isTablet ? _canNextNotifier : null,
       handleNextNotifier: isTablet ? _handleNextNotifier : null,
+      handleSkipNotifier: isTablet ? _handleSkipNotifier : null,
     );
   }
 
@@ -663,8 +696,13 @@ class _InspectionRunnerViewState extends State<InspectionRunnerView> {
                 allSubValues: allSubValues,
                 singleCheckValues: singleCheckValues,
                 defectMap: defectMap,
+                skippedSet: _resolveSkippedSet(),
                 canNextNotifier: _canNextNotifier,
                 handleNextNotifier: _handleNextNotifier,
+                handleSkipNotifier: _handleSkipNotifier,
+                currentItemIsOptional: !isSummary &&
+                    step < _items.length &&
+                    _items[step]['required'] == false,
                 onBack: step > 0 ? _onBack : null,
                 onStepTapped: (index) {
                   if (index == step) return;
@@ -805,7 +843,7 @@ class _TabletHeader extends StatelessWidget {
                     children: [
                       Text(
                         'INSPECTION',
-                        style: inspInterStyle(9, FontWeight.w600, kInspSecText)
+                        style: inspInterStyle(13, FontWeight.w600, kInspSecText)
                             .copyWith(letterSpacing: 0.5),
                       ),
                       if (assetName.isNotEmpty)
@@ -835,7 +873,7 @@ class _TabletHeader extends StatelessWidget {
                       isSummary
                           ? 'Complete'
                           : 'Step ${step + 1} of $total',
-                      style: inspInterStyle(12, FontWeight.w500, kInspSecText),
+                      style: inspInterStyle(13, FontWeight.w500, kInspSecText),
                     ),
                     if (defects > 0)
                       Container(
@@ -848,7 +886,7 @@ class _TabletHeader extends StatelessWidget {
                         child: Text(
                           '$defects defect${defects == 1 ? '' : 's'}',
                           style:
-                              inspInterStyle(11, FontWeight.w600, kInspError),
+                              inspInterStyle(13, FontWeight.w600, kInspError),
                         ),
                       ),
                   ],
@@ -878,14 +916,14 @@ class _TabletHeader extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               initials,
-              style: inspInterStyle(12, FontWeight.w600, kInspPrimary),
+              style: inspInterStyle(13, FontWeight.w600, kInspPrimary),
             ),
           ),
           if (fullName.isNotEmpty) ...[
             const SizedBox(width: 8),
             Text(
               fullName.split(' ').first,
-              style: inspInterStyle(12, FontWeight.w500, kInspPrimaryText),
+              style: inspInterStyle(13, FontWeight.w500, kInspPrimaryText),
             ),
           ],
         ],
@@ -903,8 +941,11 @@ class _TabletSidebar extends StatefulWidget {
   final Map<int, Map<String, String>> allSubValues;
   final Map<int, String> singleCheckValues;
   final Map<String, bool> defectMap;
+  final Set<int> skippedSet;
   final ValueNotifier<bool> canNextNotifier;
   final ValueNotifier<VoidCallback?> handleNextNotifier;
+  final ValueNotifier<VoidCallback?> handleSkipNotifier;
+  final bool currentItemIsOptional;
   final VoidCallback? onBack;
   final ValueChanged<int>? onStepTapped;
 
@@ -915,8 +956,11 @@ class _TabletSidebar extends StatefulWidget {
     required this.allSubValues,
     required this.singleCheckValues,
     required this.defectMap,
+    required this.skippedSet,
     required this.canNextNotifier,
     required this.handleNextNotifier,
+    required this.handleSkipNotifier,
+    required this.currentItemIsOptional,
     this.onBack,
     this.onStepTapped,
   });
@@ -1010,7 +1054,7 @@ class _TabletSidebarState extends State<_TabletSidebar> {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
             child: Text(
               'INSPECTION STEPS',
-              style: inspInterStyle(10, FontWeight.w600, kInspSecText)
+              style: inspInterStyle(13, FontWeight.w600, kInspSecText)
                   .copyWith(letterSpacing: 0.5),
             ),
           ),
@@ -1065,6 +1109,7 @@ class _TabletSidebarState extends State<_TabletSidebar> {
                   label: label,
                   status: status,
                   hasDefect: hasDefect,
+                  isSkipped: widget.skippedSet.contains(index),
                   onTap: tappable && widget.onStepTapped != null
                       ? () => widget.onStepTapped!(index)
                       : null,
@@ -1107,6 +1152,18 @@ class _TabletSidebarState extends State<_TabletSidebar> {
                           outlined: false,
                         ),
                       ),
+                      if (widget.currentItemIsOptional) ...[
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: InspectionPillButton(
+                            label: 'Skip',
+                            trailingIcon: Icons.redo_rounded,
+                            onTap: () => widget.handleSkipNotifier.value?.call(),
+                            outlined: true,
+                          ),
+                        ),
+                      ],
                     ],
                   );
                 },
@@ -1125,6 +1182,7 @@ class _SidebarStepTile extends StatelessWidget {
   final String label;
   final String status; // 'done', 'active', 'pending', 'locked'
   final bool hasDefect;
+  final bool isSkipped;
   final bool isSummaryTile;
   final VoidCallback? onTap;
 
@@ -1133,6 +1191,7 @@ class _SidebarStepTile extends StatelessWidget {
     required this.label,
     required this.status,
     required this.hasDefect,
+    this.isSkipped = false,
     this.isSummaryTile = false,
     this.onTap,
   });
@@ -1159,6 +1218,9 @@ class _SidebarStepTile extends StatelessWidget {
         circleColor = const Color(0xFFF1F5F9);
         circleChild = const Icon(Icons.assignment_turned_in_rounded, size: 14, color: kInspPrimary);
       }
+    } else if (isDone && isSkipped) {
+      circleColor = const Color(0xFFF1F5F9);
+      circleChild = const Icon(Icons.redo_rounded, size: 14, color: Color(0xFF94A3B8));
     } else if (isDone && hasDefect) {
       circleColor = kInspError;
       circleChild = const Icon(Icons.priority_high, size: 14, color: Colors.white);
@@ -1169,29 +1231,31 @@ class _SidebarStepTile extends StatelessWidget {
       circleColor = kInspPrimary;
       circleChild = Text(
         '${index + 1}',
-        style: inspInterStyle(11, FontWeight.w600, Colors.white),
+        style: inspInterStyle(13, FontWeight.w600, Colors.white),
       );
     } else {
       circleColor = const Color(0xFFF1F5F9);
       circleChild = Text(
         '${index + 1}',
-        style: inspInterStyle(11, FontWeight.w500, const Color(0xFFCBD5E1)),
+        style: inspInterStyle(13, FontWeight.w500, const Color(0xFFCBD5E1)),
       );
     }
 
     // Label style varies by state.
     final TextStyle labelStyle;
     if (isActive) {
-      labelStyle = inspInterStyle(12, FontWeight.w700, kInspPrimary);
+      labelStyle = inspInterStyle(13, FontWeight.w700, kInspPrimary);
+    } else if (isDone && isSkipped) {
+      labelStyle = inspInterStyle(13, FontWeight.w500, const Color(0xFF94A3B8));
     } else if (isDone && hasDefect) {
-      labelStyle = inspInterStyle(12, FontWeight.w600, kInspError);
+      labelStyle = inspInterStyle(13, FontWeight.w600, kInspError);
     } else if (isDone) {
-      labelStyle = inspInterStyle(12, FontWeight.w600, kInspSuccess);
+      labelStyle = inspInterStyle(13, FontWeight.w600, kInspSuccess);
     } else if (isSummaryTile && !isLocked) {
       // Summary tile when all steps done but not yet on summary
-      labelStyle = inspInterStyle(12, FontWeight.w600, kInspPrimary);
+      labelStyle = inspInterStyle(13, FontWeight.w600, kInspPrimary);
     } else {
-      labelStyle = inspInterStyle(12, FontWeight.w500, const Color(0xFF94A3B8));
+      labelStyle = inspInterStyle(13, FontWeight.w500, const Color(0xFF94A3B8));
     }
 
     return GestureDetector(

@@ -15,6 +15,7 @@ const Color kFormSlate4  = Color(0xFF94A3B8); // slate-400
 const Color kFormBorder  = Color(0xFFE2E8F0); // slate-200
 const Color kFormBg      = Color(0xFFF1F5F9); // slate-100
 const Color kFormSurface = Color(0xFFF8FAFC); // slate-50
+const Color kFormSidebarDk = Color(0xFF0C4A6E); // sky-900 (sidebar gradient start)
 
 // ── Typography ────────────────────────────────────────────────────────────────
 TextStyle ffStyle(double size, FontWeight weight, Color color) =>

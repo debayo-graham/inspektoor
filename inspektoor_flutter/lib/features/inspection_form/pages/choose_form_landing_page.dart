@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '/features/inspection_form/components/form_flow_step_bar.dart';
 import 'form_flow_tokens.dart';
 import 'form_search_page.dart';
+import 'tablet_form_shell.dart';
+import '/pages/dashboard/home_page/home_page_widget.dart';
 import '/pages/inspection_forms/create_inspection_form_page/create_inspection_form_page_widget.dart';
 
 // ─── Screen 1 — Landing ───────────────────────────────────────────────────────
@@ -68,31 +71,26 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── App bar ──────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                children: [
-                  const FormFlowBackButton(),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Create Inspection Form',
-                        style: ffStyle(17, FontWeight.w800, kFormSlate8),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 36),
-                ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // ── Tablet (≥768): unified shell with step bar / sidebar ────
+          if (constraints.maxWidth >= 768) {
+            return const TabletFormShell();
+          }
+          // ── Phone (<768): stacked page navigation ──────────────────
+          return Column(
+            children: [
+              FormFlowStepBar(
+                currentStepIndex: 0,
+                onBack: () => Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst),
+                onClose: () => Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst),
               ),
-            ),
 
             // ── Body ─────────────────────────────────────────────────────────
             Expanded(
-              child: SingleChildScrollView(
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
                 child: Column(
                   children: [
@@ -197,9 +195,11 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
                   ],
                 ),
               ),
+              ),
             ),
           ],
-        ),
+        );
+        },
       ),
     );
   }

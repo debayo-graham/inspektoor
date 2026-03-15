@@ -59,7 +59,7 @@ class InspectionPhotoInput extends StatelessWidget {
               ? '✓ ${photos.length} photo${photos.length == 1 ? '' : 's'} captured'
               : '⚠ At least 1 photo required',
           style: inspInterStyle(
-            12,
+            13,
             FontWeight.w600,
             hasPhotos ? kInspPassFill : kInspWarning,
           ),

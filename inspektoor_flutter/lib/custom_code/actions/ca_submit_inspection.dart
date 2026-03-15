@@ -88,6 +88,17 @@ Future<dynamic> caSubmitInspection() async {
 
     // ── 4. INSERT inspection_items (batch) ───────────────────────────────
     if (items.isNotEmpty) {
+      // Pre-compute which items were skipped so we can set status and
+      // avoid writing sentinel value rows for them.
+      final skippedKeys = <String>{};
+      for (final item in items) {
+        final vals =
+            (item['values'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        if (vals.any((v) => v['value'] == 'skipped')) {
+          skippedKeys.add(item['template_item_key'] as String? ?? '');
+        }
+      }
+
       final itemRows = items.map((item) {
         final key = item['template_item_key'] as String? ?? '';
         final tplItem = templateItems[key];
@@ -98,6 +109,7 @@ Future<dynamic> caSubmitInspection() async {
           'label': item['label'] as String? ?? '',
           'order': (item['order'] as num?)?.toInt() ?? 0,
           'config': tplItem?['config'],
+          'status': skippedKeys.contains(key) ? 'skipped' : 'completed',
           'created_by': userId,
         };
       }).toList();
@@ -119,6 +131,9 @@ Future<dynamic> caSubmitInspection() async {
         final key = item['template_item_key'] as String? ?? '';
         final itemId = itemIdMap[key];
         if (itemId == null) continue;
+
+        // Skipped items have status on the parent row — no value rows needed.
+        if (skippedKeys.contains(key)) continue;
 
         final values =
             (item['values'] as List?)?.cast<Map<String, dynamic>>() ?? [];

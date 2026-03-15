@@ -11,7 +11,7 @@ MODULE: INSPECTION EXECUTION
 Priority: Critical. The inspection draft infrastructure exists but the
 execution page is an empty placeholder. Nothing in this module works end-to-end.
 
-INSP-01  Build inspect_asset page UI  [DONE — 2026-03-11]
+INSP-01  Build inspect_asset page UI  `DONE — 2026-03-11`
   Files built (all clean Dart, no FlutterFlow imports):
     lib/features/inspection/inspection_runner_view.dart
     lib/features/inspection/inspection_session.dart
@@ -164,7 +164,7 @@ INSP-01b  Comment-box "Quick Fill" from previous inspections
           3. Fall back to the hardcoded defaults when no history exists.
   Depends on: INSP-02
 
-INSP-02  Implement inspection submission action  [DONE — 2026-03-12]
+INSP-02  Implement inspection submission action  `DONE — 2026-03-12`
   Gap:  No action submits FFAppState.inspectionDraftJson to the database.
         inspections, inspection_items, and inspection_item_values are never
         written from Flutter.
@@ -209,18 +209,14 @@ INSP-02  Implement inspection submission action  [DONE — 2026-03-12]
         only rendered for __final_signature__ key (inspector auto-step). All other
         signature items (e.g. Driver Signature) suppress the "Signed by" line.
 
-  Still to do (INSP-02 not yet complete):
-    - Implement caSubmitInspection custom action (DB writes).
-    - Wire submit button in InspectionSummaryView to the action.
-    - Upload photo/signature bytes to Supabase Storage before inserting URLs.
 
-INSP-03  Wire submission action into inspect_asset page  [DONE — 2026-03-12]
+INSP-03  Wire submission action into inspect_asset page  `DONE — 2026-03-12`
   Gap:  Even after INSP-02 exists, it must be called from the page.
   Work: Add a submit/complete button to inspect_asset page that calls
         caSubmitInspection and navigates on success.
   Depends on: INSP-01, INSP-02
 
-INSP-04  Update asset.last_inspected_at on inspection submit  [DONE — 2026-03-12]
+INSP-04  Update asset.last_inspected_at on inspection submit  `DONE — 2026-03-12`
   Gap:  The assets table has a last_inspected_at column. It is never updated.
   Work: After a successful inspection INSERT, update the asset row:
           .from('assets').update({'last_inspected_at': completedAt}).eq('id', assetId)
@@ -267,38 +263,77 @@ INSP-07  Display GPS map on inspection history / detail view
 MODULE: INSPECTION FORM TEMPLATES
 --------------------------------------------------
 
-FORM-01  Confirm inspection_templates INSERT is wired in create page  [DONE — 2026-03-12]
+FORM-01  Confirm inspection_templates INSERT is wired in create page  `DONE — 2026-03-12`
   File: lib/pages/inspection_forms/create_inspection_form_page/
   Verified: Save button calls wrapSchema() then InspectionTemplatesTable().insert()
             with org_id, name, schema, category. Navigates to InspectionGalleryPage on success.
 
-FORM-02  Confirm inspection_templates UPDATE is wired in edit page  [DONE — 2026-03-12]
+FORM-02  Confirm inspection_templates UPDATE is wired in edit page  `DONE — 2026-03-12`
   File: lib/pages/inspection_forms/edit_inspection_form_page/
   Verified: Save button calls wrapSchema() then InspectionTemplatesTable().update()
             matching on id. Updates name, schema, category. Navigates back on success.
 
-FORM-03  Redesign "Use Existing Form" selection flow  [IN PROGRESS — 2026-03-12]
+FORM-03  Redesign "Use Existing Form" selection flow  [IN PROGRESS — 2026-03-14]
   Replaces: choose_inspection_form_page, inspection_gallery_page,
             preview_inspection_form_page (FlutterFlow-generated, do not match new UI)
   Design:   4-screen flow from UI/UX designers (DM Sans, sky-blue palette)
   Screens:
-    Screen 1 — ChooseFormLandingPage   (lib/features/inspection_form/pages/)
+    Screen 1 — ChooseFormLandingPage   (lib/features/inspection_form/pages/)  `DONE`
       "Use Existing Form" card + "Build New Form" row
-    Screen 2 — FormSearchPage
+      Categories fetched from DB, scrollable chips
+    Screen 2 — FormSearchPage  `DONE`
       Live search (300ms debounce) + category filter chips + results list
-      API: SearchInspectionFormTemplatesCall (search_inspection_templates RPC)
-           Response fields: id, name, category, version, is_active, created_at,
-                            created_by, creator_first_name, creator_last_name
-           Note: no step-count or last_used field in API — derive from schema length
-                 and created_at as fallback
-    Screen 3 — FormPreviewPage
-      Form header card + step list (icon derived from item type) + "Use This Form" CTA
-    Screen 4 — FormConfirmedPage
-      Animated green checkmark, form summary, "Start Inspection" + "Change Form"
+      Infinite scroll, stagger animation, step count in rows
+    Screen 3 — FormDetailsPage  `DONE`
+      Accordion step config panels (per-type: numeric, multi-check, etc.)
+      Preview button (icon + label, purple theme) → FormPreviewScreen
+      "Use This Form" → ConfirmActionDialog → duplicates predefined template
+        with user's org_id, is_predefined=false → navigates to Screen 4
+    Screen 3A — FormPreviewScreen  `DONE`
+      Standalone interactive preview (no FFAppState)
+      Mobile: dark banner + progress header + AnimatedSwitcher steps
+      Tablet (≥768px): banner + header + sidebar step list + content
+      Reuses InspectionItemStep (callbacks) + InspectionSummaryView(onSubmit: null)
+      Local state: _stepIndex, _answerCache, _answeredItems, _goingForward
+    Screen 4 — FormConfirmedPage  `DONE — UI only`
+      Animated green checkmark, form summary, breadcrumb trail,
+      "Select Asset & Begin" + secondary actions (Change Form, Edit This Form, Go to Dashboard)
+      Silent duplicate-template cleanup on any back navigation (PopScope fire-and-forget)
+    Screen 5 — SelectAssetPage  `DONE — 2026-03-14`
+      lib/features/asset_selection/pages/select_asset_page.dart
+      Search bar (300ms debounce) + category filter chips + asset cards
+      Selection state with sticky footer (recap strip + "Begin Inspection" green button)
+      Overflow bottom sheet: Change Form, Go to Dashboard, Cancel Inspection
+      Cancel bottom sheet with red confirm + "Keep Going"
+      Inspection status from last_inspected_at: ok/due/overdue (green/amber/red)
+      Two entry points:
+        1. From FormConfirmedPage "Select Asset & Begin" → form + schemaItems passed
+        2. From drawer "Inspect Asset" → no form, standalone mode
+      On "Begin Inspection": sets templateJson + calls initInspectionDraft → pushes InspectAsset
+      Registered as GoRouter route: /selectAssetPage
+      Context-aware drawer `DONE — 2026-03-14`:
+        - Standalone entry (from drawer): shows hamburger menu + app drawer, hides "Change Form" in overflow
+        - Form flow entry (from FormConfirmedPage): shows back button, full overflow menu
+        - Uses `widget.form == null` as discriminator (`_isStandalone` getter)
+        - `_scaffoldKey` (GlobalKey<ScaffoldState>) for programmatic drawer open
+      Layout fix `DONE — 2026-03-14`:
+        - Replaced Scaffold.bottomSheet (was expanding to cover body → blank page)
+          with Stack + Positioned for sticky footer overlay
+  Drawer wiring `DONE — 2026-03-14`:
+    lib/pages/components/app_drawer_content/app_drawer_content_widget.dart
+      "Inspect Asset" item under inspections menu now navigates to SelectAssetPage
+      (was AssetListPageWidget). "Assets" item under Asset Management unchanged.
+  New shared component:
+    lib/common/components/confirm_action_dialog.dart  `DONE`
+      Reusable Cancel/Confirm dialog (same style as ConfirmQuitInspectionDialog
+      but without "type confirm" text field). Static show() → Future<bool>.
   Nav wiring: replace existing FFRoute entries for /chooseInspectionFormPage
               and /inspectionGalleryPage; push Screens 2-4 imperatively
-  Open: "Start Inspection" wiring — confirm whether assetId is in context
-        before this flow starts, or if asset selection follows.
+  Still TODO:
+    - Wire "Edit This Form" on FormConfirmedPage → navigate to form editor for duplicated template
+    - Wire "Go to Dashboard" on FormConfirmedPage + SelectAssetPage → navigate to dashboard
+    - DB fix: UPDATE inspection_templates SET org_id = NULL WHERE is_predefined = true
+    - Update card editor + create form to use category picker (hardcoded 'Vehicles')
   Depends on: INSP-01, INSP-03
 
 FORM-04  Verify preview_inspection_form_page renders real template data
@@ -335,6 +370,82 @@ ASSET-03  Confirm _copy pages are duplicates and not the active pages
         edit_asset_page vs edit_asset_page_copy. Determine which is wired
         in the router (lib/flutter_flow/nav/nav.dart) and remove or archive
         the unused copy.
+
+--------------------------------------------------
+MODULE: ASSET CATEGORIES (org-managed)
+--------------------------------------------------
+
+Priority: Medium. Replaces the hardcoded 9-value category enum with an
+org-scoped lookup table. Follows the same pattern as template_categories.
+Current state: assets.category is a text column with a CHECK constraint
+limiting values to 9 hardcoded strings. Labels and icons are duplicated
+across add_asset_page, select_asset_page, and the _kCategoryLabels map.
+
+ACAT-01  Create asset_categories table and migrate data
+  Gap:  Asset categories are a hardcoded CHECK constraint on assets.category.
+        Orgs cannot add, rename, or reorder categories.
+  Work: 1. Create asset_categories table:
+            id (uuid PK), org_id (uuid FK → orgs), name (text),
+            icon (text, nullable — icon key for Flutter lookup),
+            sort_order (int), created_at, updated_at
+         2. Seed default rows for every existing org using the current 9
+            categories (vehicle, trailer, heavy_equipment, etc.) with
+            sensible sort_order values.
+         3. Add category_id (uuid FK → asset_categories) column to assets.
+         4. Backfill assets.category_id from the existing text category
+            column matched against the seeded rows for each org.
+         5. Drop the CHECK constraint on assets.category.
+         6. (Future migration) Drop the old assets.category text column
+            once all Flutter code reads category_id exclusively.
+  Notes: - Seed must run per-org so each org gets its own rows.
+         - Keep assets.category readable (do not drop yet) for backward
+           compat during migration.
+
+ACAT-02  Update add/edit asset pages to use category picker
+  Gap:  Add and edit asset pages use a hardcoded dropdown with 9 enum values.
+  Work: 1. Fetch asset_categories for the current org (ordered by sort_order).
+         2. Replace the hardcoded dropdown with a picker populated from DB rows.
+         3. Write category_id (uuid) to assets on insert/update instead of
+            the text category column.
+         4. Update upsert_asset.dart to send category_id.
+  Files: lib/pages/assets/add_asset_page/add_asset_page_widget.dart
+         lib/pages/assets/edit_asset_page/edit_asset_page_widget.dart
+         lib/custom_code/actions/upsert_asset.dart
+  Depends on: ACAT-01
+
+ACAT-03  Update SelectAssetPage filter chips to read from DB
+  Gap:  SelectAssetPage builds filter chips from whatever category strings
+        exist on fetched assets. Icons are mapped via _assetCategoryIcon()
+        using a hardcoded switch.
+  Work: 1. Fetch asset_categories for the current org on page init.
+         2. Build filter chips from the DB rows (name + sort_order).
+         3. Filter assets by category_id match instead of text comparison.
+         4. Replace _assetCategoryIcon() and _kCategoryLabels with a
+            data-driven icon/label lookup from the fetched category rows.
+         5. Remove hardcoded _kCategoryLabels map.
+  File: lib/features/asset_selection/pages/select_asset_page.dart
+  Depends on: ACAT-01
+
+ACAT-04  Build asset category management screen (org settings)
+  Gap:  No UI exists for orgs to manage their asset categories.
+  Work: 1. Create a settings/categories page where org admins can:
+            - Add new categories (name, optional icon)
+            - Rename existing categories
+            - Reorder categories (drag or sort_order buttons)
+            - Delete categories (only if no assets reference them,
+              or reassign assets first)
+         2. Wire from an org settings / admin section (location TBD).
+  Depends on: ACAT-01
+  Notes: Can be backlogged until an org settings section is built.
+         The seeded defaults cover users until then.
+
+ACAT-05  Seed default asset categories on new org creation
+  Gap:  ACAT-01 seeds categories for existing orgs, but new orgs created
+        after the migration also need defaults.
+  Work: Add a DB trigger or update the onboarding RPC (upsert_onboarding_v3)
+        to insert the default 9 asset_categories rows when a new org is
+        created.
+  Depends on: ACAT-01
 
 --------------------------------------------------
 MODULE: DASHBOARD
@@ -565,7 +676,31 @@ MODULE: TECH DEBT / CLEANUP
 
 Priority: Low. Tackle incrementally as files are touched for real work.
 
-TECH-01  Fix FlutterFlow-generated analyzer warnings
+TECH-01  Route all caught errors to global error logger
+  Gap:  Many catch blocks handle errors gracefully (snackbar, debugPrint) but
+        swallow the exception — it never reaches the global error handler and
+        is not recorded in the app_errors table. This makes production issues
+        invisible.
+  Work: Audit all try/catch blocks across the codebase. In every catch that
+        handles an error locally (snackbar, fallback, etc.), add a call to
+        logCaughtError() so the error is also sent to the Supabase Edge
+        Function for logging. The logCaughtError() helper was added to
+        init_global_error_logging.dart (errorType: 'CaughtError').
+        Priority files:
+          - lib/features/ (all feature code)
+          - lib/custom_code/actions/ (all custom actions)
+        Exclude: FlutterFlow-generated code (lib/flutter_flow/*, lib/pages/*)
+  Depends on: nothing
+
+TECH-02  Field readability — bump text sizes on FF-generated pages
+  Gap:  Custom feature pages bumped to min 12px (2026-03-14).
+        FlutterFlow-generated pages (lib/pages/*, lib/flutter_flow/*) still
+        use small sizes (9–11px) that are hard to read outdoors.
+  Work: Audit and bump when those pages are included in MVP scope.
+        Follow the field readability guidelines in 03_ui_system.md.
+  Depends on: nothing
+
+TECH-03  Fix FlutterFlow-generated analyzer warnings
   Gap:  ~3000 analyzer warnings and infos from FlutterFlow-generated code
         (lib/flutter_flow/*, lib/pages/*, lib/backend/*). Now that FlutterFlow
         is no longer used, these should be cleaned up.

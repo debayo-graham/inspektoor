@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '/backend/supabase/supabase.dart';
+import '/common/components/confirm_action_dialog.dart';
+import '/features/inspection_form/components/form_flow_step_bar.dart';
+import '/pages/dashboard/home_page/home_page_widget.dart';
 import 'form_flow_tokens.dart';
 import 'form_search_page.dart';
 
@@ -71,8 +75,20 @@ class _FormConfirmedPageState extends State<FormConfirmedPage>
     super.dispose();
   }
 
-  void _changeForm() {
-    // Pop Confirmed + Preview to land back on Search.
+  Future<void> _deleteDuplicate() async {
+    final formId = widget.form['id'] as String?;
+    if (formId == null) return;
+    try {
+      await InspectionTemplatesTable().delete(
+        matchingRows: (rows) => rows.eq('id', formId),
+      );
+    } catch (_) {}
+  }
+
+  void _changeForm() async {
+    await _deleteDuplicate();
+    if (!mounted) return;
+    // Pop Confirmed + Details to land back on Search.
     final nav = Navigator.of(context);
     nav.pop();
     nav.pop();
@@ -106,20 +122,33 @@ class _FormConfirmedPageState extends State<FormConfirmedPage>
       canPop: false, // no back gesture on confirmation screen
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Column(
-            children: [
-              // ── App bar (no back button) ────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: Center(
-                  child: Text('Form Assigned',
-                      style: ffStyle(17, FontWeight.w800, kFormSlate8)),
-                ),
-              ),
+        body: Column(
+          children: [
+            FormFlowStepBar(
+              currentStepIndex: 3,
+              onBack: _changeForm,
+              selectedForm: form,
+              schemaStepCount: stepCount,
+              onClose: () async {
+                final confirmed = await ConfirmActionDialog.show(
+                  context,
+                  icon: Icons.close_rounded,
+                  title: 'Exit form setup?',
+                  message: 'Are you sure you want to exit? Any unsaved progress will be lost.',
+                  confirmLabel: 'Exit',
+                  themeColor: const Color(0xFFEF4444),
+                );
+                if (!confirmed || !mounted) return;
+                await _deleteDuplicate();
+                if (!mounted) return;
+                Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst);
+              },
+            ),
 
-              // ── Body ────────────────────────────────────────────────────
-              Expanded(
+            // ── Body ────────────────────────────────────────────────────
+            Expanded(
+              child: SafeArea(
+                top: false,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                   child: SlideTransition(
@@ -337,8 +366,8 @@ class _FormConfirmedPageState extends State<FormConfirmedPage>
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

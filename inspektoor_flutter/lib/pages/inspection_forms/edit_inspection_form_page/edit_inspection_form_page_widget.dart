@@ -56,10 +56,39 @@ class _EditInspectionFormPageWidgetState
   var hasContainerTriggered1 = false;
   final animationsMap = <String, AnimationInfo>{};
 
+  // ── Category dropdown state ──
+  List<Map<String, dynamic>> _categories = [];
+  String? _selectedCategoryId;
+
+  Future<void> _fetchCategories() async {
+    try {
+      final rows = await SupaFlow.client
+          .from('template_categories')
+          .select('id, name')
+          .order('sort_order', ascending: true);
+      if (mounted) {
+        safeSetState(() {
+          _categories = (rows as List).cast<Map<String, dynamic>>();
+        });
+      }
+    } catch (_) {}
+  }
+
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => EditInspectionFormPageModel());
+
+    // Pre-select existing category from the incoming template row.
+    final incomingCatId = getJsonField(
+      widget.inspectionFormTemplateRow,
+      r'''$.category_id''',
+    );
+    if (incomingCatId != null) {
+      _selectedCategoryId = incomingCatId.toString();
+    }
+
+    _fetchCategories();
 
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
@@ -773,6 +802,73 @@ class _EditInspectionFormPageWidgetState
                                       ),
                                     ),
                                   ],
+                                ),
+                                // ── Category dropdown ──
+                                Padding(
+                                  padding: const EdgeInsetsDirectional.fromSTEB(0, 16, 0, 0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Category',
+                                        style: FlutterFlowTheme.of(context)
+                                            .bodyMedium
+                                            .override(
+                                              font: GoogleFonts.inter(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                              letterSpacing: 0.0,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 7),
+                                      DropdownButtonFormField<String>(
+                                        value: _selectedCategoryId,
+                                        decoration: InputDecoration(
+                                          hintText: 'Select a category',
+                                          hintStyle: FlutterFlowTheme.of(context)
+                                              .bodyLarge
+                                              .override(
+                                                font: GoogleFonts.inter(),
+                                                color: const Color(0x4C1D354F),
+                                                fontSize: 18.0,
+                                                letterSpacing: 0.0,
+                                              ),
+                                          filled: true,
+                                          fillColor: FlutterFlowTheme.of(context)
+                                              .primaryBackground,
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                              color: Color(0x00000000),
+                                              width: 2.0,
+                                            ),
+                                            borderRadius: BorderRadius.circular(5.0),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: FlutterFlowTheme.of(context).primary,
+                                              width: 2.0,
+                                            ),
+                                            borderRadius: BorderRadius.circular(5.0),
+                                          ),
+                                        ),
+                                        style: FlutterFlowTheme.of(context)
+                                            .bodyLarge
+                                            .override(
+                                              font: GoogleFonts.inter(),
+                                              letterSpacing: 0.0,
+                                            ),
+                                        items: _categories.map((cat) {
+                                          return DropdownMenuItem<String>(
+                                            value: cat['id'] as String,
+                                            child: Text(cat['name'] as String),
+                                          );
+                                        }).toList(),
+                                        onChanged: (val) {
+                                          safeSetState(() => _selectedCategoryId = val);
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 Align(
                                   alignment: AlignmentDirectional(-1.0, 0.0),
@@ -2040,8 +2136,9 @@ class _EditInspectionFormPageWidgetState
                                                                       .text,
                                                                   'schema': _model
                                                                       .inspectionFormSchema,
-                                                                  'category':
-                                                                      'Vehicles',
+                                                                  if (_selectedCategoryId != null)
+                                                                    'category_id':
+                                                                        _selectedCategoryId,
                                                                 },
                                                                 matchingRows:
                                                                     (rows) => rows

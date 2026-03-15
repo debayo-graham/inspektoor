@@ -1,8 +1,30 @@
 UI System Map
 Generated: 2026-02-28
+Updated: 2026-03-14
 Source: flutter_flow_theme.dart, flutter_flow_widgets.dart, custom_icons.dart,
         button_main_widget.dart, dashboard_tile_lg_blue_widget.dart,
         custom_navigation_component_widget.dart
+
+--------------------------------------------------
+Field Readability Guidelines
+--------------------------------------------------
+
+This app is used outdoors in the field — bright sunlight, gloved hands,
+quick glances at arm's length. All custom feature UI must follow these
+minimums. (Added 2026-03-14.)
+
+  Minimum font size:   12px — nothing smaller, even for badges and hints
+  Minimum icon size:   16px — for any visible icon
+  Minimum tap target:  44x44 — iOS HIG guideline for gloved/outdoor use
+  Preferred body text: 13-15px — primary content the user reads mid-task
+  Headers:             17-20px — page titles and section headers
+
+  Bump rules applied (2026-03-14):
+    9  -> 12
+    10 -> 12
+    11 -> 12
+    12 -> 13
+    13+ -> no change
 
 --------------------------------------------------
 Theme Entry Point

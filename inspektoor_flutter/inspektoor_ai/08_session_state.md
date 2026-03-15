@@ -1,5 +1,5 @@
 Session State
-Last updated: 2026-03-11
+Last updated: 2026-03-14
 
 --------------------------------------------------
 What the system currently is
@@ -53,6 +53,27 @@ Working end-to-end:
       · Back navigation: PopScope + confirm dialog with re-entrancy guard
       · Summary screen with per-item defect detection, pending INSP-02
     Files: lib/features/inspection/*, lib/common/components/*
+  - Inspection submission (INSP-02/03/04 DONE — 2026-03-12):
+    caSubmitInspection persists draft → inspections + inspection_items +
+    inspection_item_values. Photos compressed and uploaded to Supabase Storage.
+    Updates asset.last_inspected_at. Wired into summary view submit button.
+  - Form flow (FORM-03, IN PROGRESS — 2026-03-14):
+    5-screen flow: Landing → Search → Details → Confirmed → SelectAsset.
+    · ChooseFormLandingPage: categories from DB, scrollable chips
+    · FormSearchPage: live search, category filter, infinite scroll
+    · FormDetailsPage: accordion step config panels, Preview button,
+      "Use This Form" with ConfirmActionDialog + template duplication
+    · FormPreviewScreen: standalone interactive preview (mobile + tablet),
+      no FFAppState, reuses InspectionItemStep/SummaryView, purple banner
+    · FormConfirmedPage: animated checkmark, "Select Asset & Begin" → SelectAssetPage
+    · SelectAssetPage: search + filter + asset cards, sticky footer, overflow/cancel sheets
+      Two entry points with context-aware drawer:
+        - From drawer "Inspect Asset": hamburger menu + app drawer, standalone mode
+        - From FormConfirmedPage flow: back button, form data passed through
+      Layout uses Stack + Positioned (not Scaffold.bottomSheet) for sticky footer
+    · ConfirmActionDialog: reusable Cancel/Confirm dialog (lib/common/components/)
+    Files: lib/features/inspection_form/pages/*, lib/features/asset_selection/pages/*,
+           lib/common/components/confirm_action_dialog.dart
   - Global error logging: crashes sent to Supabase Edge Function → app_errors
   - Theme and UI system: Inter font, brand blue (#27AAE2), light mode only,
     responsive navigation (bottom bar on phone, vertical sidebar on tablet)
@@ -69,20 +90,20 @@ Partially built:
 What should be worked on next
 --------------------------------------------------
 
-1. Inspection execution  [highest priority]
-   INSP-01 (page UI) is DONE as of 2026-03-10. Next steps:
-     a. INSP-02: Write caSubmitInspection to persist the draft to inspections,
-        inspection_items, and inspection_item_values
-     b. INSP-03: Wire submission action into the summary view
-     c. INSP-04: Update asset.last_inspected_at on submit
+1. FORM-03 remaining work  [current priority]
+   All 5 screens + preview are built. SelectAssetPage done with context-aware drawer.
+   Drawer "Inspect Asset" wired to SelectAssetPage. Remaining:
+     a. Wire "Edit This Form" on FormConfirmedPage → navigate to form editor
+     b. Wire "Go to Dashboard" on FormConfirmedPage + SelectAssetPage → navigate to dashboard
+     c. DB fix: UPDATE inspection_templates SET org_id = NULL WHERE is_predefined = true
+     d. Update card editor + create form to use category picker (hardcoded 'Vehicles')
+     e. QA the full flow end-to-end (see backlog.md checklist)
 
 2. Verify and close partially-built flows
    Before building new modules, confirm:
      - Asset list page actually loads and filters live data
      - Dashboard tiles display real query results, not defaults
      - Inspection form create/edit pages write to the database
-     - Choose-form page correctly calls initInspectionDraft and
-       navigates to inspect_asset
 
 3. Wire nav tabs 3 and 4
    Tab 3 (forms) and tab 4 (notifications) route to placeholder pages.

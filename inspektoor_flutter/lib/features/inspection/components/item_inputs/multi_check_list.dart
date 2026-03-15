@@ -227,7 +227,7 @@ class _MultiCheckCard extends StatelessWidget {
                                     ? '⚠ Photo required'
                                     : '⚠ Note or photo required',
                             style: inspInterStyle(
-                              11,
+                              12,
                               FontWeight.w600,
                               value == 'pass' ? kInspPassFill : kInspFailText,
                             ),
@@ -372,7 +372,7 @@ class _Chip extends StatelessWidget {
         child: Text(
           label,
           style: inspInterStyle(
-            11,
+            12,
             FontWeight.w700,
             active ? Colors.white : const Color(0xFF94A3B8),
           ),
@@ -478,7 +478,7 @@ class _FailureNotePanelState extends State<_FailureNotePanel> {
   Widget build(BuildContext context) {
     final header = Text(
       'ISSUE DETAILS',
-      style: inspInterStyle(10, FontWeight.w700, const Color(0xFF64748B))
+      style: inspInterStyle(12, FontWeight.w700, const Color(0xFF64748B))
           .copyWith(letterSpacing: 1.2),
     );
 

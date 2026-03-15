@@ -6,6 +6,7 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:math';
 import 'dart:ui';
 import '/index.dart';
+import '/features/asset_selection/pages/select_asset_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -610,7 +611,7 @@ class _AppDrawerContentWidgetState extends State<AppDrawerContentWidget>
                                     Navigator.pop(context);
 
                                     context.pushNamed(
-                                        AssetListPageWidget.routeName);
+                                        SelectAssetPage.routeName);
                                   },
                                   child: Container(
                                     height: 56.0,

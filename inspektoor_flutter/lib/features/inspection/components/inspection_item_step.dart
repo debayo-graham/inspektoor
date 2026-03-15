@@ -72,6 +72,10 @@ class InspectionItemStep extends StatefulWidget {
   /// External notifier populated with the step's _handleNext callback.
   final ValueNotifier<VoidCallback?>? handleNextNotifier;
 
+  /// External notifier populated with the step's _handleSkip callback,
+  /// or null when the step is not optional.
+  final ValueNotifier<VoidCallback?>? handleSkipNotifier;
+
   const InspectionItemStep({
     required super.key,
     required this.item,
@@ -87,6 +91,7 @@ class InspectionItemStep extends StatefulWidget {
     this.isTablet = false,
     this.canNextNotifier,
     this.handleNextNotifier,
+    this.handleSkipNotifier,
   });
 
   @override
@@ -96,6 +101,9 @@ class InspectionItemStep extends StatefulWidget {
 class _InspectionItemStepState extends State<InspectionItemStep> {
   bool _submitting = false;
   bool _submitted = false;
+  bool _wasSkipped = false;
+
+  bool get _isOptional => widget.item['required'] == false;
 
   // multi-check: sub-check id → 'pass' | 'fail' | '' (unset)
   late final Map<String, String> _checkValues;
@@ -145,6 +153,8 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
     } else {
       _checkValues = {};
     }
+
+    _wasSkipped = widget.initialCache['skipped'] == true;
 
     _failureNotes = Map<String, String>.from(
       (cache['failureNotes'] as Map?)?.cast<String, String>() ?? {},
@@ -207,7 +217,23 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
     if (mounted) setState(() {});
   }
 
+  void _handleSkip() {
+    if (_submitting) return;
+    // Persist skip state so jump-forward navigation can auto-resubmit.
+    widget.onCacheChanged({'skipped': true});
+    _submit([
+      {
+        'key': 'skipped',
+        'label': 'Skipped',
+        'value': 'skipped',
+        '_skipped': true,
+      }
+    ]);
+  }
+
   void _updateCache() {
+    // Once the user interacts with the actual input, clear the skipped banner.
+    if (_wasSkipped) setState(() => _wasSkipped = false);
     widget.onCacheChanged({
       'checkValues': Map<String, String>.from(_checkValues),
       'failureNotes': Map<String, String>.from(_failureNotes),
@@ -423,10 +449,12 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
     // during the build phase (which can be swallowed by ValueListenableBuilder).
     if (!_submitted) {
       final canNext = _canNext;
+      final isOptional = _isOptional;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || _submitted) return;
-        widget.canNextNotifier?.value = canNext;
+        widget.canNextNotifier?.value = canNext || isOptional;
         widget.handleNextNotifier?.value = _handleNext;
+        widget.handleSkipNotifier?.value = isOptional ? _handleSkip : null;
       });
     }
 
@@ -446,7 +474,7 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
                 child: _buildScrollableContent(),
               ),
             ),
-            if (!widget.hideFooter) _buildFooter(),
+            if (!widget.hideFooter) _buildFullFooter(),
           ],
         ),
       ),
@@ -458,11 +486,38 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
     final label = widget.item['label'] as String? ?? '';
     final description = _cfg['description'] as String? ?? '';
 
+    // Previously-skipped banner — shown when this step was skipped on last visit.
+    final skippedBanner = _wasSkipped
+        ? Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              border: Border.all(color: const Color(0xFFFCD34D)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded,
+                    color: Color(0xFFF59E0B), size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'This step was previously skipped — answer below or skip again',
+                    style: inspInterStyle(13, FontWeight.w500, kInspPrimaryText),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : const SizedBox.shrink();
+
     // Types that get the full-width section layout (no InspectionInputCard).
     if (t == 'multi-check' || t == 'single-check' || t == 'numeric' || t == 'alphanumeric' || t == 'comment-box' || t == 'photo' || t == 'signature') {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          skippedBanner,
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Column(
@@ -487,7 +542,13 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
         ],
       );
     }
-    return InspectionInputCard(child: _buildInputArea());
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        skippedBanner,
+        InspectionInputCard(child: _buildInputArea()),
+      ],
+    );
   }
 
   Widget _buildInputArea() {
@@ -746,6 +807,51 @@ class _InspectionItemStepState extends State<InspectionItemStep> {
       });
     }
     return true;
+  }
+
+  Widget _buildFullFooter() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildFooter(),
+        if (_isOptional) _buildSkipButton(),
+      ],
+    );
+  }
+
+  Widget _buildSkipButton() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      child: GestureDetector(
+        onTap: _submitting ? null : _handleSkip,
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFBEB),
+            border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.redo_rounded,
+                  color: _submitting ? const Color(0xFFFDE68A) : const Color(0xFFD97706), size: 16),
+              const SizedBox(width: 6),
+              Text(
+                'Skip this step',
+                style: inspInterStyle(
+                  14,
+                  FontWeight.w600,
+                  _submitting ? const Color(0xFFFDE68A) : const Color(0xFFD97706),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildFooter() {

@@ -21,6 +21,24 @@ Future<void> initGlobalErrorLogging() async {
   _ErrorHooks.install();
 }
 
+/// Log a caught error to the Supabase Edge Function (app_errors table).
+/// Call this from any catch block where the error is handled gracefully
+/// but still needs to be recorded for investigation.
+Future<void> logCaughtError(
+  Object error, {
+  StackTrace? stack,
+  String? screen,
+  Map<String, dynamic>? extra,
+}) {
+  return _ErrorHooks._sendToEdge(
+    errorType: 'CaughtError',
+    message: error.toString(),
+    stack: stack?.toString(),
+    screen: screen,
+    extra: extra,
+  );
+}
+
 class _ErrorHooks {
   static bool installed = false;
 

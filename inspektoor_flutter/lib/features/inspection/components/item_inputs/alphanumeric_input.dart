@@ -167,7 +167,7 @@ class _InspectionAlphanumericInputState
                   widget.placeholder.toUpperCase(),
                   textAlign: TextAlign.center,
                   style: inspInterStyle(
-                          10, FontWeight.w700, const Color(0xFFCBD5E1))
+                          12, FontWeight.w700, const Color(0xFFCBD5E1))
                       .copyWith(letterSpacing: 1.5),
                 ),
               ),
@@ -214,14 +214,14 @@ class _InspectionAlphanumericInputState
                 Text(
                   '✓ Valid format',
                   textAlign: TextAlign.center,
-                  style: inspInterStyle(10, FontWeight.w700,
+                  style: inspInterStyle(12, FontWeight.w700,
                       Colors.white.withValues(alpha: 0.4)),
                 )
               else if (_hasPattern)
                 Text(
                   '${_displayValue.length} / ${_slots.length} characters',
                   textAlign: TextAlign.center,
-                  style: inspInterStyle(10, FontWeight.w700,
+                  style: inspInterStyle(12, FontWeight.w700,
                       Colors.white.withValues(alpha: 0.4)),
                 ),
             ],
@@ -343,7 +343,7 @@ class _InspectionAlphanumericInputState
                   Text(
                     'OCR enabled',
                     style: inspInterStyle(
-                        9, FontWeight.w800, const Color(0xFF16A34A)),
+                        12, FontWeight.w800, const Color(0xFF16A34A)),
                   ),
                 ],
               ),
@@ -367,7 +367,7 @@ class _InspectionAlphanumericInputState
                   Text(
                     'Format: ${widget.formatPattern!.toUpperCase()}',
                     style: inspInterStyle(
-                        9, FontWeight.w800, const Color(0xFF0284C7)),
+                        12, FontWeight.w800, const Color(0xFF0284C7)),
                   ),
                 ],
               ),
@@ -406,7 +406,7 @@ class _InspectionAlphanumericInputState
                 'Tap camera to scan and auto-fill value',
                 textAlign: TextAlign.center,
                 style: inspInterStyle(
-                    10, FontWeight.w400, const Color(0xFF94A3B8)),
+                    12, FontWeight.w400, const Color(0xFF94A3B8)),
               ),
             ],
           ],
@@ -437,7 +437,7 @@ class _InspectionAlphanumericInputState
             'Tap camera to scan and auto-fill value',
             textAlign: TextAlign.center,
             style: inspInterStyle(
-                10, FontWeight.w400, const Color(0xFF94A3B8)),
+                12, FontWeight.w400, const Color(0xFF94A3B8)),
           ),
         ],
       ],
@@ -474,7 +474,7 @@ class _InspectionAlphanumericInputState
               child: Text(
                 'Scanned from image',
                 style: inspInterStyle(
-                    10, FontWeight.w600, const Color(0xFF94A3B8)),
+                    12, FontWeight.w600, const Color(0xFF94A3B8)),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -496,7 +496,7 @@ class _InspectionAlphanumericInputState
                     Text(
                       'Rescan',
                       style: inspInterStyle(
-                          10, FontWeight.w700, const Color(0xFF64748B)),
+                          12, FontWeight.w700, const Color(0xFF64748B)),
                     ),
                   ],
                 ),

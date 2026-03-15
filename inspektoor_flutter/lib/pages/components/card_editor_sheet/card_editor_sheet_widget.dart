@@ -51,6 +51,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
   late final TextEditingController _maxPhotosCtrl;
   bool _allowMultiple = false;
   bool _photoRequired = false;
+  bool _isRequired = true;
 
   @override
   void setState(VoidCallback callback) {
@@ -137,6 +138,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
       if (incomingType == 'numeric' || incomingType == 'alphanumeric' || incomingType == 'comment-box') {
         _photoRequired = cfg['ocrEnabled'] == true;
       }
+      _isRequired = (widget.incomingItem as Map)['required'] ?? true;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
@@ -489,6 +491,78 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                                               ],
                                             ),
                                           ),
+                                          // ── Required / Optional toggle ──────────────────
+                                          Padding(
+                                            padding: const EdgeInsetsDirectional.fromSTEB(0, 14, 0, 0),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                                                const SizedBox(height: 12),
+                                                Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                                  children: [
+                                                    const Icon(Icons.rule_rounded, size: 16, color: Color(0xFF64748B)),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            'Step completion',
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: 12,
+                                                              fontWeight: FontWeight.w600,
+                                                              color: const Color(0xFF1E293B),
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            'Optional steps can be skipped during inspection',
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: 11,
+                                                              fontWeight: FontWeight.w400,
+                                                              color: const Color(0xFF64748B),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Column(
+                                                      children: [
+                                                        Text(
+                                                          _isRequired ? 'Required' : 'Optional',
+                                                          style: GoogleFonts.inter(
+                                                            fontSize: 10,
+                                                            fontWeight: FontWeight.w700,
+                                                            color: _isRequired
+                                                                ? const Color(0xFF0EA5E9)
+                                                                : const Color(0xFFF59E0B),
+                                                          ),
+                                                        ),
+                                                        SizedBox(
+                                                          height: 24,
+                                                          width: 40,
+                                                          child: FittedBox(
+                                                            fit: BoxFit.contain,
+                                                            child: Switch.adaptive(
+                                                              value: _isRequired,
+                                                              activeTrackColor: const Color(0xFF0EA5E9),
+                                                              onChanged: (val) => safeSetState(() {
+                                                                _isRequired = val;
+                                                              }),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 12),
+                                                const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                                              ],
+                                            ),
+                                          ),
                                           _buildTypeConfig(context),
                                         ],
                                       ),
@@ -620,6 +694,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                                                     [],
                                                     args[7],
                                                     args[8],
+                                                    _isRequired,
                                                   );
                                                   await widget.onSave?.call(
                                                     _model.cardOutputOnCreate!,
@@ -647,6 +722,7 @@ class _CardEditorSheetWidgetState extends State<CardEditorSheetWidget> {
                                                     [],
                                                     args[7],
                                                     args[8],
+                                                    _isRequired,
                                                   );
                                                   await widget.onSave?.call(
                                                     _model.cardOutputOnEdit!,

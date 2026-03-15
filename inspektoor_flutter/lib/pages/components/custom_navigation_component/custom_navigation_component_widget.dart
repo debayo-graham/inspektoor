@@ -6,6 +6,7 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:math';
 import 'dart:ui';
 import '/index.dart';
+import '/features/asset_selection/pages/select_asset_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -659,7 +660,7 @@ class _CustomNavigationComponentWidgetState
                                 ),
                                 onPressed: () async {
                                   context.goNamed(
-                                    AssetListPageWidget.routeName,
+                                    SelectAssetPage.routeName,
                                     extra: <String, dynamic>{
                                       '__transition_info__': TransitionInfo(
                                         hasTransition: true,

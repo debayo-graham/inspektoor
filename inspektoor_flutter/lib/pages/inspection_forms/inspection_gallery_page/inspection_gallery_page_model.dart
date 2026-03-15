@@ -120,11 +120,12 @@ class InspectionGalleryPageModel
           ApiPagingParams nextPageMarker) =>
       inspectionFormTemplateListViewApiCall!(nextPageMarker).then(
           (inspectionFormTemplateListViewSearchInspectionFormTemplatesResponse) {
-        final pageItems =
-            (inspectionFormTemplateListViewSearchInspectionFormTemplatesResponse
-                        .jsonBody ??
-                    [])
-                .toList() as List;
+        final body =
+            inspectionFormTemplateListViewSearchInspectionFormTemplatesResponse
+                .jsonBody;
+        final pageItems = body is List
+            ? body
+            : <dynamic>[];
         final newNumItems = nextPageMarker.numItems + pageItems.length;
         inspectionFormTemplateListViewPagingController?.appendPage(
           pageItems,

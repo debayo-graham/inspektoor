@@ -840,7 +840,9 @@ CREATE TABLE IF NOT EXISTS "public"."inspection_items" (
     "created_at" timestamp without time zone DEFAULT "now"(),
     "updated_at" timestamp without time zone DEFAULT "now"(),
     "created_by" "uuid",
-    "updated_by" "uuid"
+    "updated_by" "uuid",
+    "status" "text" DEFAULT 'completed'::"text" NOT NULL,
+    CONSTRAINT "inspection_items_status_check" CHECK (("status" = ANY (ARRAY['completed'::"text", 'skipped'::"text"])))
 );
 
 

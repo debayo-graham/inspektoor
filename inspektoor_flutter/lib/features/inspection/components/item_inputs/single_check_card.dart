@@ -84,7 +84,7 @@ class InspectionSingleCheckCard extends StatelessWidget {
             photoRequired
                 ? '⚠ Photo required'
                 : '⚠ Note or photo required',
-            style: inspInterStyle(11, FontWeight.w600, kInspFailText),
+            style: inspInterStyle(12, FontWeight.w600, kInspFailText),
           ),
           const SizedBox(height: 12),
           _FailureEvidencePanel(
@@ -135,7 +135,7 @@ class InspectionSingleCheckCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   'OR',
-                  style: inspInterStyle(11, FontWeight.w700, const Color(0xFFCBD5E1))
+                  style: inspInterStyle(12, FontWeight.w700, const Color(0xFFCBD5E1))
                       .copyWith(letterSpacing: 1.5),
                 ),
               ),
@@ -300,7 +300,7 @@ class _ChoiceButton extends StatelessWidget {
                 Text(
                   subtitle,
                   style: inspInterStyle(
-                    12,
+                    13,
                     FontWeight.w400,
                     selected
                         ? Colors.white.withValues(alpha: 0.65)
@@ -445,7 +445,7 @@ class _FailureEvidencePanelState extends State<_FailureEvidencePanel> {
       children: [
         Text(
           'ISSUE DETAILS',
-          style: inspInterStyle(10, FontWeight.w700, const Color(0xFF64748B))
+          style: inspInterStyle(12, FontWeight.w700, const Color(0xFF64748B))
               .copyWith(letterSpacing: 1.2),
         ),
         const SizedBox(height: 8),
