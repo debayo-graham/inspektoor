@@ -68,18 +68,28 @@ class FormFlowStepBar extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: Row(
                   children: [
-                    // ── Back chevron (all steps) ────────────────────
+                    // ── Back button ────────────────────────────────
                     GestureDetector(
                       onTap: onBack,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.chevron_left_rounded,
-                            color: Colors.white, size: 22),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.chevron_left_rounded,
+                                color: Colors.white, size: 22),
+                          ),
+                          if (currentStepIndex == 0) ...[
+                            const SizedBox(width: 8),
+                            Text('Dashboard',
+                                style: ffStyle(14, FontWeight.w700, Colors.white70)),
+                          ],
+                        ],
                       ),
                     ),
                     Expanded(

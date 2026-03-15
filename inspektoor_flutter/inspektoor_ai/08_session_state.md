@@ -1,5 +1,5 @@
 Session State
-Last updated: 2026-03-14
+Last updated: 2026-03-15
 
 --------------------------------------------------
 What the system currently is
@@ -57,19 +57,33 @@ Working end-to-end:
     caSubmitInspection persists draft → inspections + inspection_items +
     inspection_item_values. Photos compressed and uploaded to Supabase Storage.
     Updates asset.last_inspected_at. Wired into summary view submit button.
-  - Form flow (FORM-03, IN PROGRESS — 2026-03-14):
+  - Form flow (FORM-03, IN PROGRESS — 2026-03-15):
     5-screen flow: Landing → Search → Details → Confirmed → SelectAsset.
+    3 layouts: phone (<768px stacked pages), portrait tablet (768-1023px TabletFormShell + horizontal step bar),
+    landscape tablet (≥1024px TabletFormShell + vertical sidebar).
     · ChooseFormLandingPage: categories from DB, scrollable chips
     · FormSearchPage: live search, category filter, infinite scroll
     · FormDetailsPage: accordion step config panels, Preview button,
       "Use This Form" with ConfirmActionDialog + template duplication
+      PopScope deletes duplicate on back nav; nulls _duplicatedForm after pushing confirmed
+      page so popUntil from Done doesn't trigger deletion
     · FormPreviewScreen: standalone interactive preview (mobile + tablet),
       no FFAppState, reuses InspectionItemStep/SummaryView, purple banner
-    · FormConfirmedPage: animated checkmark, "Select Asset & Begin" → SelectAssetPage
+    · FormConfirmedPage: animated checkmark, form summary card, 4 CTAs:
+        - Edit Form (primary blue gradient, full-width) → EditInspectionFormPageWidget
+        - Start Inspection + Change Form (side-by-side grey) → SelectAssetPage / back to search
+        - Done (text) → popUntil dashboard, keeps assigned form in DB
+      Change Form deletes the duplicate; Done/Edit/Start do NOT.
+      X close button: ConfirmActionDialog → delete duplicate → popUntil dashboard
+    · TabletFormShell: single stateful shell for portrait + landscape tablet.
+      Manages all steps via _TabletStep enum. X close button as Positioned overlay
+      on content area (Stack.fit: StackFit.expand). Sidebar back: "< Dashboard" on step 0
+      (with cleanup), plain "<" on steps 1-3. Confirmed step buttons match mobile layout.
     · SelectAssetPage: search + filter + asset cards, sticky footer, overflow/cancel sheets
       Two entry points with context-aware drawer:
         - From drawer "Inspect Asset": hamburger menu + app drawer, standalone mode
         - From FormConfirmedPage flow: back button, form data passed through
+      Overflow sheet: Go to Dashboard (with cleanup), Cancel Inspection
       Layout uses Stack + Positioned (not Scaffold.bottomSheet) for sticky footer
     · ConfirmActionDialog: reusable Cancel/Confirm dialog (lib/common/components/)
     Files: lib/features/inspection_form/pages/*, lib/features/asset_selection/pages/*,
@@ -91,13 +105,17 @@ What should be worked on next
 --------------------------------------------------
 
 1. FORM-03 remaining work  [current priority]
-   All 5 screens + preview are built. SelectAssetPage done with context-aware drawer.
-   Drawer "Inspect Asset" wired to SelectAssetPage. Remaining:
-     a. Wire "Edit This Form" on FormConfirmedPage → navigate to form editor
-     b. Wire "Go to Dashboard" on FormConfirmedPage + SelectAssetPage → navigate to dashboard
-     c. DB fix: UPDATE inspection_templates SET org_id = NULL WHERE is_predefined = true
-     d. Update card editor + create form to use category picker (hardcoded 'Vehicles')
-     e. QA the full flow end-to-end (see backlog.md checklist)
+   All 5 screens + preview + tablet shell built. Edit Form, Done, Start Inspection,
+   Change Form all wired on all 3 layouts. Duplicate cleanup logic verified.
+   Remaining:
+     a. ✅ Wire "Edit Form" on FormConfirmedPage → EditInspectionFormPageWidget (DONE 2026-03-15)
+     b. ✅ Wire "Done" → dashboard without deleting duplicate (DONE 2026-03-15)
+     c. ✅ Wire "Start Inspection" → SelectAssetPage (DONE 2026-03-15)
+     d. ✅ Tablet shell confirmed buttons reorganised to match mobile (DONE 2026-03-15)
+     e. DB fix: UPDATE inspection_templates SET org_id = NULL WHERE is_predefined = true
+     f. Update card editor + create form to use category picker (hardcoded 'Vehicles')
+     g. QA the full flow end-to-end (see backlog.md checklist)
+     h. Verify "Done" keeps form in DB on all screen sizes (hot-reload and test)
 
 2. Verify and close partially-built flows
    Before building new modules, confirm:

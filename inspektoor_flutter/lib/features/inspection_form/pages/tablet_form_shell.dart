@@ -9,6 +9,7 @@ import '/features/asset_selection/pages/select_asset_page.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/pages/dashboard/home_page/home_page_widget.dart';
 import '/pages/inspection_forms/create_inspection_form_page/create_inspection_form_page_widget.dart';
+import '/pages/inspection_forms/edit_inspection_form_page/edit_inspection_form_page_widget.dart';
 import '/features/inspection_form/components/form_flow_step_bar.dart';
 import '/features/inspection_form/components/form_header_card.dart';
 import '/features/inspection_form/components/step_accordion_row.dart';
@@ -404,15 +405,28 @@ class _TabletFormShellState extends State<TabletFormShell>
     );
   }
 
+  void _editForm() {
+    final form = _duplicatedForm ?? _selectedForm;
+    if (form == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EditInspectionFormPageWidget(
+          inspectionFormTemplateRow: form,
+        ),
+      ),
+    );
+  }
+
+  void _done() {
+    Navigator.of(context).popUntil((route) =>
+        route.settings.name == HomePageWidget.routeName || route.isFirst);
+  }
+
   // ── Navigation helpers ───────────────────────────────────────────────────
 
   void _goToSearch() {
     setState(() => _step = _TabletStep.search);
     if (_results.isEmpty) _fetchSearch();
-  }
-
-  void _goToLanding() {
-    setState(() => _step = _TabletStep.landing);
   }
 
   void _selectForm(Map<String, dynamic> form) {
@@ -441,11 +455,49 @@ class _TabletFormShellState extends State<TabletFormShell>
                   children: [
                     _buildSidebar(300),
                     Expanded(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) =>
-                            FadeTransition(opacity: animation, child: child),
-                        child: _buildContent(isLandscape: true),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            transitionBuilder: (child, animation) =>
+                                FadeTransition(opacity: animation, child: child),
+                            child: _buildContent(isLandscape: true),
+                          ),
+                          // ── X close — top-right of content area ──────
+                          Positioned(
+                            top: 24,
+                            right: 32,
+                            child: GestureDetector(
+                              onTap: () async {
+                                if (_duplicatedForm != null) {
+                                  final confirmed = await ConfirmActionDialog.show(
+                                    context,
+                                    icon: Icons.close_rounded,
+                                    title: 'Exit form setup?',
+                                    message: 'Are you sure you want to exit? Any unsaved progress will be lost.',
+                                    confirmLabel: 'Exit',
+                                    themeColor: const Color(0xFFEF4444),
+                                  );
+                                  if (!confirmed || !mounted) return;
+                                  await _deleteDuplicate();
+                                }
+                                if (!mounted) return;
+                                Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst);
+                              },
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.close_rounded,
+                                    color: kFormSlate5, size: 20),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -458,7 +510,32 @@ class _TabletFormShellState extends State<TabletFormShell>
               children: [
                 FormFlowStepBar(
                   currentStepIndex: _step.index,
-                  onBack: () => Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst),
+                  onBack: () async {
+                    if (_step == _TabletStep.landing) {
+                      if (_duplicatedForm != null) {
+                        final confirmed = await ConfirmActionDialog.show(
+                          context,
+                          icon: Icons.close_rounded,
+                          title: 'Exit form setup?',
+                          message: 'Are you sure you want to exit? Any unsaved progress will be lost.',
+                          confirmLabel: 'Exit',
+                          themeColor: const Color(0xFFEF4444),
+                        );
+                        if (!confirmed || !mounted) return;
+                        await _deleteDuplicate();
+                      }
+                      if (!mounted) return;
+                      Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst);
+                    } else {
+                      if (_duplicatedForm != null) {
+                        await _deleteDuplicate();
+                      }
+                      if (!mounted) return;
+                      setState(() {
+                        _step = _TabletStep.values[_step.index - 1];
+                      });
+                    }
+                  },
                   selectedForm: _selectedForm,
                   schemaStepCount: _schemaSteps.length,
                   onClose: () async {
@@ -524,7 +601,6 @@ class _TabletFormShellState extends State<TabletFormShell>
           onSearchChanged: _onSearchChanged,
           onCategoryTap: _selectCategory,
           onFormTap: _selectForm,
-          onBack: _goToLanding,
         ),
       _TabletStep.details => _DetailsContent(
           key: const ValueKey('details'),
@@ -537,7 +613,6 @@ class _TabletFormShellState extends State<TabletFormShell>
           onToggleStep: (i) =>
               setState(() => _openStepIndex = _openStepIndex == i ? null : i),
           onUseThisForm: _confirmAndDuplicate,
-          onBack: _goToSearch,
         ),
       _TabletStep.confirmed => _ConfirmedContent(
           key: const ValueKey('confirmed'),
@@ -547,7 +622,9 @@ class _TabletFormShellState extends State<TabletFormShell>
           checkCtrl: _checkCtrl,
           contentCtrl: _contentCtrl,
           onStartInspection: _startInspection,
+          onEditForm: _editForm,
           onChangeForm: _changeForm,
+          onDone: _done,
         ),
     };
   }
@@ -574,19 +651,56 @@ class _TabletFormShellState extends State<TabletFormShell>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Back button ──────────────────────────────────────────────
+          // ── Back button ───────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             child: GestureDetector(
-              onTap: () => Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst),
+              onTap: () async {
+                if (_step == _TabletStep.landing) {
+                  // Step 0 → go to dashboard (with cleanup if needed)
+                  if (_duplicatedForm != null) {
+                    final confirmed = await ConfirmActionDialog.show(
+                      context,
+                      icon: Icons.close_rounded,
+                      title: 'Exit form setup?',
+                      message: 'Are you sure you want to exit? Any unsaved progress will be lost.',
+                      confirmLabel: 'Exit',
+                      themeColor: const Color(0xFFEF4444),
+                    );
+                    if (!confirmed || !mounted) return;
+                    await _deleteDuplicate();
+                  }
+                  if (!mounted) return;
+                  Navigator.of(context).popUntil((route) => route.settings.name == HomePageWidget.routeName || route.isFirst);
+                } else {
+                  // Steps 1-3 → go to previous step (with cleanup if duplicate exists)
+                  if (_duplicatedForm != null) {
+                    await _deleteDuplicate();
+                  }
+                  if (!mounted) return;
+                  setState(() {
+                    _step = _TabletStep.values[_step.index - 1];
+                  });
+                }
+              },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.chevron_left_rounded,
-                      color: Colors.white70, size: 18),
-                  const SizedBox(width: 4),
-                  Text('Dashboard',
-                      style: ffStyle(13, FontWeight.w600, Colors.white70)),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.chevron_left_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                  if (_step == _TabletStep.landing) ...[
+                    const SizedBox(width: 10),
+                    Text('Dashboard',
+                        style: ffStyle(15, FontWeight.w700, Colors.white70)),
+                  ],
                 ],
               ),
             ),
@@ -595,19 +709,8 @@ class _TabletFormShellState extends State<TabletFormShell>
           // ── Title ────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'NEW INSPECTION',
-                  style: ffStyle(12, FontWeight.w700, Colors.white54)
-                      .copyWith(letterSpacing: 1.2),
-                ),
-                const SizedBox(height: 4),
-                Text('Create Inspection Form',
-                    style: ffStyle(20, FontWeight.w800, Colors.white)),
-              ],
-            ),
+            child: Text('Create Inspection Form',
+                style: ffStyle(20, FontWeight.w800, Colors.white)),
           ),
           const SizedBox(height: 24),
 
@@ -806,15 +909,17 @@ class _LandingContent extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ── Two-column grid ──────────────────────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Use Existing card
-              Expanded(child: _buildExistingCard()),
-              const SizedBox(width: 20),
-              // Build New card
-              Expanded(child: _buildNewCard(context)),
-            ],
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Use Existing card
+                Expanded(child: _buildExistingCard()),
+                const SizedBox(width: 20),
+                // Build New card
+                Expanded(child: _buildNewCard(context)),
+              ],
+            ),
           ),
           const SizedBox(height: 32),
 
@@ -1067,14 +1172,14 @@ class _LandingContent extends StatelessWidget {
               'Create a custom checklist from scratch, step by step',
               style: ffStyle(13, FontWeight.w400, kFormSlate4),
             ),
-            const SizedBox(height: 16),
+            const Spacer(),
             Row(
               children: [
                 Text('Get started',
-                    style: ffStyle(13, FontWeight.w700, kFormGreen)),
+                    style: ffStyle(15, FontWeight.w700, kFormGreen)),
                 const SizedBox(width: 4),
                 const Icon(Icons.chevron_right_rounded,
-                    color: kFormGreen, size: 16),
+                    color: kFormGreen, size: 18),
               ],
             ),
           ],
@@ -1100,7 +1205,6 @@ class _SearchContent extends StatelessWidget {
   final VoidCallback onSearchChanged;
   final ValueChanged<String> onCategoryTap;
   final ValueChanged<Map<String, dynamic>> onFormTap;
-  final VoidCallback onBack;
 
   const _SearchContent({
     super.key,
@@ -1115,7 +1219,6 @@ class _SearchContent extends StatelessWidget {
     required this.onSearchChanged,
     required this.onCategoryTap,
     required this.onFormTap,
-    required this.onBack,
   });
 
   @override
@@ -1124,28 +1227,13 @@ class _SearchContent extends StatelessWidget {
       children: [
         // ── Header ──────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
+          padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
           child: Column(
             children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: onBack,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: kFormSurface,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.chevron_left_rounded,
-                          color: kFormSlate5, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text('Select Form',
-                      style: ffStyle(20, FontWeight.w800, kFormSlate8)),
-                ],
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Select Form',
+                    style: ffStyle(20, FontWeight.w800, kFormSlate8)),
               ),
               const SizedBox(height: 16),
 
@@ -1464,7 +1552,6 @@ class _DetailsContent extends StatelessWidget {
   final int? openStepIndex;
   final ValueChanged<int> onToggleStep;
   final VoidCallback onUseThisForm;
-  final VoidCallback onBack;
 
   const _DetailsContent({
     super.key,
@@ -1476,7 +1563,6 @@ class _DetailsContent extends StatelessWidget {
     required this.openStepIndex,
     required this.onToggleStep,
     required this.onUseThisForm,
-    required this.onBack,
   });
 
   @override
@@ -1501,6 +1587,46 @@ class _DetailsContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Preview button
+                    if (!schemaLoading && steps.isNotEmpty)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => FormPreviewScreen(
+                                templateItems: steps,
+                                formName: name,
+                              ),
+                            ),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F3FF),
+                              border: Border.all(
+                                  color: const Color(0xFFDDD6FE),
+                                  width: 1.5),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                    Icons.play_circle_outline_rounded,
+                                    color: Color(0xFF8B5CF6),
+                                    size: 18),
+                                const SizedBox(width: 6),
+                                Text('Preview',
+                                    style: ffStyle(14, FontWeight.w700,
+                                        const Color(0xFF8B5CF6))),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
                     FormHeaderCard(
                       name: name,
                       category: category,
@@ -1510,51 +1636,10 @@ class _DetailsContent extends StatelessWidget {
                       version: (form['version'] as num?)?.toInt() ?? 1,
                     ),
                     const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Text(
-                          'INSPECTION STEPS',
-                          style: ffStyle(13, FontWeight.w700, kFormSlate4)
-                              .copyWith(letterSpacing: 1.2),
-                        ),
-                        const Spacer(),
-                        // Preview button
-                        if (!schemaLoading && steps.isNotEmpty)
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => FormPreviewScreen(
-                                  templateItems: steps,
-                                  formName: name,
-                                ),
-                              ),
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 7),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5F3FF),
-                                border: Border.all(
-                                    color: const Color(0xFFDDD6FE),
-                                    width: 1.5),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                      Icons.play_circle_outline_rounded,
-                                      color: Color(0xFF8B5CF6),
-                                      size: 16),
-                                  const SizedBox(width: 4),
-                                  Text('Preview',
-                                      style: ffStyle(13, FontWeight.w700,
-                                          const Color(0xFF8B5CF6))),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
+                    Text(
+                      'INSPECTION STEPS',
+                      style: ffStyle(13, FontWeight.w700, kFormSlate4)
+                          .copyWith(letterSpacing: 1.2),
                     ),
                     const SizedBox(height: 12),
                     if (schemaLoading)
@@ -1669,7 +1754,7 @@ class _DetailsContent extends StatelessWidget {
       children: [
         // ── Left sub-panel: step list ────────────────────────────────────
         SizedBox(
-          width: 300,
+          width: 360,
           child: Column(
             children: [
               Padding(
@@ -1677,42 +1762,15 @@ class _DetailsContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: onBack,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: kFormSurface,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.chevron_left_rounded,
-                                color: kFormSlate5, size: 18),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'FORM DETAILS',
-                                style: ffStyle(
-                                        12, FontWeight.w700, kFormSlate4)
-                                    .copyWith(letterSpacing: 1.0),
-                              ),
-                              Text(name,
-                                  style: ffStyle(
-                                      14, FontWeight.w800, kFormSlate8),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis),
-                            ],
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'FORM DETAILS',
+                      style: ffStyle(12, FontWeight.w700, kFormSlate4)
+                          .copyWith(letterSpacing: 1.0),
                     ),
+                    Text(name,
+                        style: ffStyle(14, FontWeight.w800, kFormSlate8),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 14),
                     Row(
                       children: [
@@ -1742,6 +1800,45 @@ class _DetailsContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
+              // Preview button
+              if (!schemaLoading && steps.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FormPreviewScreen(
+                            templateItems: steps,
+                            formName: form['name'] as String? ?? 'Untitled',
+                          ),
+                        ),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F3FF),
+                          border: Border.all(
+                              color: const Color(0xFFDDD6FE), width: 1.5),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.play_circle_outline_rounded,
+                                color: Color(0xFF8B5CF6), size: 18),
+                            const SizedBox(width: 6),
+                            Text('Preview',
+                                style: ffStyle(14, FontWeight.w700,
+                                    const Color(0xFF8B5CF6))),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Align(
@@ -2047,7 +2144,7 @@ class _StepDetailPanel extends StatelessWidget {
     _addConfigRowsForType(type, cfg, configRows);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
+      padding: const EdgeInsets.fromLTRB(28, 24, 72, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2257,7 +2354,9 @@ class _ConfirmedContent extends StatelessWidget {
   final AnimationController? checkCtrl;
   final AnimationController? contentCtrl;
   final VoidCallback onStartInspection;
+  final VoidCallback onEditForm;
   final VoidCallback onChangeForm;
+  final VoidCallback onDone;
 
   const _ConfirmedContent({
     super.key,
@@ -2267,7 +2366,9 @@ class _ConfirmedContent extends StatelessWidget {
     required this.checkCtrl,
     required this.contentCtrl,
     required this.onStartInspection,
+    required this.onEditForm,
     required this.onChangeForm,
+    required this.onDone,
   });
 
   @override
@@ -2462,64 +2563,122 @@ class _ConfirmedContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    // ── Action buttons ──────────────────────────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: onStartInspection,
-                            child: Container(
-                              constraints:
-                                  const BoxConstraints(maxWidth: 220),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [kFormBlue, kFormBlueDk],
+                    // ── Edit Form (primary) ────────────────────────────
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: GestureDetector(
+                        onTap: onEditForm,
+                        child: Container(
+                          width: double.infinity,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [kFormBlue, kFormBlueDk],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    kFormBlue.withValues(alpha: 0.30),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.edit_rounded,
+                                  color: Colors.white, size: 16),
+                              const SizedBox(width: 8),
+                              Text('Edit Form',
+                                  style: ffStyle(
+                                      15, FontWeight.w800, Colors.white)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── Start Inspection + Change Form (side by side) ──
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: onStartInspection,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: kFormBg,
+                                  borderRadius:
+                                      BorderRadius.circular(16),
                                 ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        kFormBlue.withValues(alpha: 0.30),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text('Start Inspection',
-                                    style: ffStyle(
-                                        15, FontWeight.w800, Colors.white)),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: onChangeForm,
-                            child: Container(
-                              constraints:
-                                  const BoxConstraints(maxWidth: 220),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: kFormSurface,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Center(
-                                child: Text('Change Form',
-                                    style: ffStyle(
-                                        14, FontWeight.w700, kFormSlate5)),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                        Icons.play_arrow_rounded,
+                                        color: kFormSlate5, size: 16),
+                                    const SizedBox(width: 6),
+                                    Text('Start Inspection',
+                                        style: ffStyle(13,
+                                            FontWeight.w700, kFormSlate5)),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: onChangeForm,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: kFormBg,
+                                  borderRadius:
+                                      BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                        Icons.swap_horiz_rounded,
+                                        color: kFormSlate5, size: 16),
+                                    const SizedBox(width: 6),
+                                    Text('Change Form',
+                                        style: ffStyle(13,
+                                            FontWeight.w700, kFormSlate5)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // ── Done button ───────────────────────────────────
+                    GestureDetector(
+                      onTap: onDone,
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                        child: Text('Done — return to dashboard',
+                            style: ffStyle(
+                                13, FontWeight.w600, kFormSlate4)),
+                      ),
                     ),
                   ],
                 ),

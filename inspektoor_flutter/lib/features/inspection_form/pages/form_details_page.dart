@@ -7,6 +7,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/pages/dashboard/home_page/home_page_widget.dart';
 import 'form_confirmed_page.dart';
 import 'form_flow_tokens.dart';
+import 'form_preview_screen.dart';
 
 // ─── Screen 3 — Form Details ──────────────────────────────────────────────────
 ///
@@ -133,6 +134,10 @@ class _FormDetailsPageState extends State<FormDetailsPage> {
           ),
         ),
       );
+      // Null out so the PopScope won't delete the form if popUntil
+      // pops through this page (e.g. from Done on the confirmed page).
+      // The confirmed page has its own copy and handles deletion itself.
+      _duplicatedForm = null;
     } catch (e) {
       if (!mounted) return;
       setState(() => _duplicating = false);
@@ -212,6 +217,48 @@ class _FormDetailsPageState extends State<FormDetailsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Preview button
+                        if (!_loading && _steps.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: GestureDetector(
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FormPreviewScreen(
+                                      templateItems: _steps,
+                                      formName: name,
+                                    ),
+                                  ),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 9),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF5F3FF),
+                                    border: Border.all(
+                                        color: const Color(0xFFDDD6FE),
+                                        width: 1.5),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                          Icons.play_circle_outline_rounded,
+                                          color: Color(0xFF8B5CF6),
+                                          size: 18),
+                                      const SizedBox(width: 6),
+                                      Text('Preview',
+                                          style: ffStyle(14, FontWeight.w700,
+                                              const Color(0xFF8B5CF6))),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         _buildHeaderCard(
                             name, category, createdAt, _steps.length),
                         const SizedBox(height: 20),

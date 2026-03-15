@@ -10,6 +10,7 @@ import '/common/components/loading_overlay.dart';
 import '/features/asset_selection/components/form_picker_sheet.dart';
 import '/features/inspection_form/pages/form_flow_tokens.dart';
 import '/pages/components/app_drawer_content/app_drawer_content_widget.dart';
+import '/pages/dashboard/home_page/home_page_widget.dart';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const Color _kRed = Color(0xFFEF4444);
@@ -342,28 +343,20 @@ class _SelectAssetPageState extends State<SelectAssetPage> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _OverflowSheet(
-        hasForm: widget.form != null,
-        onChangeForm: () {
-          Navigator.pop(ctx);
-          // Pop back through confirmed → details → search
-          final nav = Navigator.of(context);
-          nav.pop(); // SelectAsset → Confirmed
-          nav.pop(); // Confirmed → Details
-          nav.pop(); // Details → Search
-        },
-        onDashboard: () {
-          Navigator.pop(ctx);
-          // TODO(FORM-03): navigate to dashboard
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Go to Dashboard — wiring pending',
-                  style: ffStyle(13, FontWeight.w500, Colors.white)),
-              backgroundColor: kFormSlate8,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          );
+        onDashboard: () async {
+          Navigator.pop(ctx); // close sheet
+          // Delete the duplicated template
+          final formId = widget.form?['id'] as String?;
+          if (formId != null) {
+            try {
+              await InspectionTemplatesTable().delete(
+                matchingRows: (rows) => rows.eq('id', formId),
+              );
+            } catch (_) {}
+          }
+          if (!mounted) return;
+          Navigator.of(context).popUntil((route) =>
+              route.settings.name == HomePageWidget.routeName || route.isFirst);
         },
         onCancel: () {
           Navigator.pop(ctx);
@@ -1015,14 +1008,10 @@ class _StickyFooter extends StatelessWidget {
 
 // ── Overflow bottom sheet ────────────────────────────────────────────────────
 class _OverflowSheet extends StatelessWidget {
-  final bool hasForm;
-  final VoidCallback onChangeForm;
   final VoidCallback onDashboard;
   final VoidCallback onCancel;
 
   const _OverflowSheet({
-    required this.hasForm,
-    required this.onChangeForm,
     required this.onDashboard,
     required this.onCancel,
   });
@@ -1055,14 +1044,6 @@ class _OverflowSheet extends StatelessWidget {
             ),
           ),
           const Divider(height: 1, color: kFormBorder),
-          if (hasForm)
-            _OverflowItem(
-              icon: Icons.swap_horiz_rounded,
-              label: 'Change Form',
-              color: kFormBlue,
-              bg: const Color(0xFFF0F9FF),
-              onTap: onChangeForm,
-            ),
           _OverflowItem(
             icon: Icons.home_rounded,
             label: 'Go to Dashboard',

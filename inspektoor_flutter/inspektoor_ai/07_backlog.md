@@ -1,6 +1,6 @@
 Development Backlog
 Generated: 2026-02-28
-Last updated: 2026-03-12
+Last updated: 2026-03-15
 Source: gaps identified in 06_module_inventory.md and 05_data_model_map.md
 Scope: complete what exists — no new features, no redesigns
 
@@ -273,10 +273,12 @@ FORM-02  Confirm inspection_templates UPDATE is wired in edit page  `DONE — 20
   Verified: Save button calls wrapSchema() then InspectionTemplatesTable().update()
             matching on id. Updates name, schema, category. Navigates back on success.
 
-FORM-03  Redesign "Use Existing Form" selection flow  [IN PROGRESS — 2026-03-14]
+FORM-03  Redesign "Use Existing Form" selection flow  [IN PROGRESS — 2026-03-15]
   Replaces: choose_inspection_form_page, inspection_gallery_page,
             preview_inspection_form_page (FlutterFlow-generated, do not match new UI)
   Design:   4-screen flow from UI/UX designers (DM Sans, sky-blue palette)
+  Layouts:  Phone (<768px stacked pages), portrait tablet (768-1023px TabletFormShell
+            + horizontal step bar), landscape tablet (≥1024px TabletFormShell + vertical sidebar)
   Screens:
     Screen 1 — ChooseFormLandingPage   (lib/features/inspection_form/pages/)  `DONE`
       "Use Existing Form" card + "Build New Form" row
@@ -289,31 +291,47 @@ FORM-03  Redesign "Use Existing Form" selection flow  [IN PROGRESS — 2026-03-1
       Preview button (icon + label, purple theme) → FormPreviewScreen
       "Use This Form" → ConfirmActionDialog → duplicates predefined template
         with user's org_id, is_predefined=false → navigates to Screen 4
+      PopScope deletes duplicate on back nav. After pushing confirmed page,
+        _duplicatedForm is nulled so popUntil from Done doesn't trigger deletion.
     Screen 3A — FormPreviewScreen  `DONE`
       Standalone interactive preview (no FFAppState)
       Mobile: dark banner + progress header + AnimatedSwitcher steps
       Tablet (≥768px): banner + header + sidebar step list + content
       Reuses InspectionItemStep (callbacks) + InspectionSummaryView(onSubmit: null)
       Local state: _stepIndex, _answerCache, _answeredItems, _goingForward
-    Screen 4 — FormConfirmedPage  `DONE — UI only`
-      Animated green checkmark, form summary, breadcrumb trail,
-      "Select Asset & Begin" + secondary actions (Change Form, Edit This Form, Go to Dashboard)
-      Silent duplicate-template cleanup on any back navigation (PopScope fire-and-forget)
+    Screen 4 — FormConfirmedPage  `DONE — 2026-03-15`
+      Animated green checkmark, form summary card, 4 CTAs on all screen sizes:
+        1. Edit Form (primary blue gradient, full-width) → EditInspectionFormPageWidget
+        2. Start Inspection + Change Form (side-by-side grey)
+        3. Done (text) → popUntil dashboard, keeps assigned form in DB
+      Change Form: deletes duplicate, pops back to search
+      Done: popUntil dashboard WITHOUT deleting duplicate
+      X close: ConfirmActionDialog → delete duplicate → popUntil dashboard
+    Screen 4T — TabletFormShell  `DONE — 2026-03-15`
+      lib/features/inspection_form/pages/tablet_form_shell.dart
+      Single stateful shell managing all steps via _TabletStep enum
+      Portrait: horizontal step bar (FormFlowStepBar) + content area
+      Landscape: vertical sidebar (300px) + content area
+      X close: Positioned overlay on content area (StackFit.expand)
+      Sidebar back: "< Dashboard" on step 0 (with confirm+cleanup),
+        plain "<" on steps 1-3 (cleanup + go to previous step)
+      Confirmed step _ConfirmedContent: same button layout as mobile
+      _editForm(), _done(), _startInspection(), _changeForm() all wired
     Screen 5 — SelectAssetPage  `DONE — 2026-03-14`
       lib/features/asset_selection/pages/select_asset_page.dart
       Search bar (300ms debounce) + category filter chips + asset cards
       Selection state with sticky footer (recap strip + "Begin Inspection" green button)
-      Overflow bottom sheet: Change Form, Go to Dashboard, Cancel Inspection
+      Overflow bottom sheet: Go to Dashboard, Cancel Inspection
       Cancel bottom sheet with red confirm + "Keep Going"
       Inspection status from last_inspected_at: ok/due/overdue (green/amber/red)
       Two entry points:
-        1. From FormConfirmedPage "Select Asset & Begin" → form + schemaItems passed
+        1. From FormConfirmedPage "Start Inspection" → form + schemaItems passed
         2. From drawer "Inspect Asset" → no form, standalone mode
       On "Begin Inspection": sets templateJson + calls initInspectionDraft → pushes InspectAsset
       Registered as GoRouter route: /selectAssetPage
       Context-aware drawer `DONE — 2026-03-14`:
-        - Standalone entry (from drawer): shows hamburger menu + app drawer, hides "Change Form" in overflow
-        - Form flow entry (from FormConfirmedPage): shows back button, full overflow menu
+        - Standalone entry (from drawer): shows hamburger menu + app drawer
+        - Form flow entry (from FormConfirmedPage): shows back button
         - Uses `widget.form == null` as discriminator (`_isStandalone` getter)
         - `_scaffoldKey` (GlobalKey<ScaffoldState>) for programmatic drawer open
       Layout fix `DONE — 2026-03-14`:
@@ -330,10 +348,10 @@ FORM-03  Redesign "Use Existing Form" selection flow  [IN PROGRESS — 2026-03-1
   Nav wiring: replace existing FFRoute entries for /chooseInspectionFormPage
               and /inspectionGalleryPage; push Screens 2-4 imperatively
   Still TODO:
-    - Wire "Edit This Form" on FormConfirmedPage → navigate to form editor for duplicated template
-    - Wire "Go to Dashboard" on FormConfirmedPage + SelectAssetPage → navigate to dashboard
     - DB fix: UPDATE inspection_templates SET org_id = NULL WHERE is_predefined = true
     - Update card editor + create form to use category picker (hardcoded 'Vehicles')
+    - QA: verify Done keeps form in DB on all screen sizes
+    - QA: full end-to-end flow testing (see backlog.md checklist)
   Depends on: INSP-01, INSP-03
 
 FORM-04  Verify preview_inspection_form_page renders real template data

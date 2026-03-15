@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '/backend/supabase/supabase.dart';
 import '/common/components/confirm_action_dialog.dart';
 import '/features/inspection_form/components/form_flow_step_bar.dart';
+import '/features/asset_selection/pages/select_asset_page.dart';
 import '/pages/dashboard/home_page/home_page_widget.dart';
+import '/pages/inspection_forms/edit_inspection_form_page/edit_inspection_form_page_widget.dart';
 import 'form_flow_tokens.dart';
 import 'form_search_page.dart';
 
@@ -95,20 +97,29 @@ class _FormConfirmedPageState extends State<FormConfirmedPage>
   }
 
   void _startInspection() {
-    // TODO(FORM-03): wire up once asset context is confirmed.
-    // Options:
-    //   1. If assetId is passed into this flow: call initInspectionDraft then
-    //      navigate to InspectAssetWidget.
-    //   2. If no asset yet: navigate to the asset list page so the user picks one.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Start Inspection — wiring pending (FORM-03 open question)',
-            style: ffStyle(13, FontWeight.w500, Colors.white)),
-        backgroundColor: kFormSlate8,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SelectAssetPage(
+          form: widget.form,
+          schemaItems: widget.schemaItems,
+        ),
       ),
     );
+  }
+
+  void _editForm() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EditInspectionFormPageWidget(
+          inspectionFormTemplateRow: widget.form,
+        ),
+      ),
+    );
+  }
+
+  void _done() {
+    Navigator.of(context).popUntil((route) =>
+        route.settings.name == HomePageWidget.routeName || route.isFirst);
   }
 
   @override
@@ -310,9 +321,9 @@ class _FormConfirmedPageState extends State<FormConfirmedPage>
 
                           const SizedBox(height: 32),
 
-                          // ── Start Inspection button ───────────────────
+                          // ── Edit Form (primary) ───────────────────
                           GestureDetector(
-                            onTap: _startInspection,
+                            onTap: _editForm,
                             child: Container(
                               width: double.infinity,
                               padding:
@@ -332,32 +343,92 @@ class _FormConfirmedPageState extends State<FormConfirmedPage>
                                   ),
                                 ],
                               ),
-                              child: Center(
-                                child: Text('Start Inspection',
-                                    style: ffStyle(
-                                        15, FontWeight.w800, Colors.white)),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.edit_rounded,
+                                      color: Colors.white, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text('Edit Form',
+                                      style: ffStyle(
+                                          15, FontWeight.w800, Colors.white)),
+                                ],
                               ),
                             ),
                           ),
 
                           const SizedBox(height: 12),
 
-                          // ── Change Form button ────────────────────────
+                          // ── Start Inspection + Change Form (side by side) ──
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _startInspection,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: kFormBg,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                            Icons.play_arrow_rounded,
+                                            color: kFormSlate5, size: 16),
+                                        const SizedBox(width: 6),
+                                        Text('Start Inspection',
+                                            style: ffStyle(13,
+                                                FontWeight.w700, kFormSlate5)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _changeForm,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: kFormBg,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                            Icons.swap_horiz_rounded,
+                                            color: kFormSlate5, size: 16),
+                                        const SizedBox(width: 6),
+                                        Text('Change Form',
+                                            style: ffStyle(13,
+                                                FontWeight.w700, kFormSlate5)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // ── Done button ────────────────────────────────
                           GestureDetector(
-                            onTap: _changeForm,
-                            child: Container(
-                              width: double.infinity,
+                            onTap: _done,
+                            child: Padding(
                               padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
-                              decoration: BoxDecoration(
-                                color: kFormBg,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Center(
-                                child: Text('Change Form',
-                                    style: ffStyle(
-                                        14, FontWeight.w700, kFormSlate5)),
-                              ),
+                                  const EdgeInsets.symmetric(vertical: 10),
+                              child: Text('Done — return to dashboard',
+                                  style: ffStyle(
+                                      13, FontWeight.w600, kFormSlate4)),
                             ),
                           ),
                         ],

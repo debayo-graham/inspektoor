@@ -186,8 +186,12 @@ class _ChooseFormLandingPageState extends State<ChooseFormLandingPage> {
                                 ],
                               ),
                             ),
+                            Text('Get started',
+                                style: ffStyle(
+                                    13, FontWeight.w700, kFormGreen)),
+                            const SizedBox(width: 4),
                             const Icon(Icons.chevron_right_rounded,
-                                color: kFormBorder, size: 22),
+                                color: kFormGreen, size: 16),
                           ],
                         ),
                       ),
